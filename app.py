@@ -82,10 +82,32 @@ st.markdown("""
         background: #1a1c29; padding: 30px; border-radius: 10px; border: 1px dashed #475569;
         box-shadow: 0 4px 6px rgba(0,0,0,0.5); margin-top: 20px; font-family: monospace; color: #e2e8f0;
     }
+    
+    /* --- ELEGANT FOOTER STYLE --- */
+    .decent-footer {
+        background: linear-gradient(135deg, #1a1c29, #0f172a);
+        border-top: 1px solid #3b82f6;
+        padding: 20px;
+        margin-top: 40px;
+        border-radius: 10px;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 13px;
+        box-shadow: 0 -4px 10px rgba(0,0,0,0.3);
+    }
+    .decent-footer strong {
+        color: #ffffff;
+    }
+    .decent-footer .dev-name {
+        color: #f97316;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
     @media print {
         body { background-color: white !important; color: black !important; }
         .stApp { background-color: white !important; color: black !important; }
-        .dark-header, [data-testid="stSidebar"], .stButton, hr, .stTabs, .panel-container { display: none !important; }
+        .dark-header, [data-testid="stSidebar"], .stButton, hr, .stTabs, .panel-container, .decent-footer { display: none !important; }
         .invoice-box { background: white !important; color: black !important; border: 1px solid black !important; box-shadow: none !important; width: 100% !important; margin: 0 !important; }
     }
 </style>
@@ -265,6 +287,15 @@ if not st.session_state.logged_in:
                     st.rerun()
                 else:
                     st.error("Invalid Username or Password!")
+
+        # --- LOGIN PAGE DECENT FOOTER ---
+        st.markdown("""
+        <div style='text-align: center; margin-top: 30px; font-size: 12px; color: #64748b;'>
+            © 2026 <strong>Holiday Country Club</strong>. All Rights Reserved.<br>
+            <span style='color: #94a3b8;'>Engineered & Developed with Excellence by </span><span style='color: #f97316; font-weight: 700;'>M. Arif Aziz</span>
+        </div>
+        """, unsafe_allow_html=True)
+
     st.stop()
 
 role = st.session_state.role
@@ -294,6 +325,16 @@ with st.sidebar:
     if st.button("🚪 Logout", use_container_width=True):
         st.session_state.logged_in = False
         st.rerun()
+
+    st.markdown("<br><hr style='border: 0.5px solid #334155;'><br>", unsafe_allow_html=True)
+    st.markdown("""
+    <div style='background: rgba(30, 41, 59, 0.5); padding: 15px; border-radius: 8px; border: 1px solid #334155; text-align: center;'>
+        <p style='color: #94a3b8; font-size: 11px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;'>System Architecture</p>
+        <p style='color: #e2e8f0; font-size: 13px; font-weight: 700; margin-bottom: 2px;'>Designed & Developed By</p>
+        <p style='color: #f97316; font-size: 14px; font-weight: 800; margin-bottom: 10px;'>M. Arif Aziz</p>
+        <p style='color: #64748b; font-size: 10px; margin: 0;'>© 2026 Holiday Country Club<br>All Rights Reserved</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # --- PREPARING PENDING TASKS & TODAY CHECK-OUTS DATA ---
 pending_tasks_list = []
@@ -1223,6 +1264,7 @@ COMPLIMENTARY ADJUSTMENTS (COMPANY COMPENSATED):
 NET PAYABLE GRAND TOTAL: Rs. {total_payable:,}
 ==================================================
 Generated via Holiday Country Club Executive Portal.
+Architected & Developed by M. Arif Aziz.
 """
                 
                 st.download_button(
@@ -1511,3 +1553,15 @@ if role in FULL_ACCESS:
                         save_data()
                         st.success(f"Service '{restored_s['name']}' restored successfully!")
                         st.rerun()
+
+# --- ELEGANT PAGE FOOTER WITH COPYRIGHT & DEVELOPER CREDITS ---
+st.markdown("""
+<div class='decent-footer'>
+    <div style='margin-bottom: 5px;'>
+        © 2026 <strong>Holiday Country Club | Executive Portal</strong>. All Rights Reserved.
+    </div>
+    <div style='font-size: 12px; color: #64748b;'>
+        Designed, Engineered & Maintained with Precision by <span class='dev-name'>M. Arif Aziz</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)

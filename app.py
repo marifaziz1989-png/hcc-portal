@@ -5,10 +5,12 @@ from supabase import create_client, Client
 url = st.secrets["SUPABASE_URL"]
 key = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(url, key)
+
 import pandas as pd
 from datetime import datetime, timedelta
 import json
 import os
+import streamlit.components.v1 as components
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -363,8 +365,6 @@ if not today_checkouts_list:
     today_checkouts_list.append(f"📅 No check-outs for today ({today_str}).")
 
 # --- DYNAMIC 5-SECOND FLIP PANELS SECTION WITH 3x2 GRID & BLINKING HEADINGS ---
-import streamlit.components.v1 as components
-
 panels_html = f"""
 <div style="display: flex; gap: 20px; width: 100%; font-family: sans-serif; margin-bottom: 20px;">
     

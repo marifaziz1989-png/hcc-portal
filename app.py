@@ -620,8 +620,14 @@ with get_tab("🏨 Stay Bookings"):
                             })
                             st.session_state.housekeeping[unit] = "Dirty"
                             save_data()
-                            st.success("✅ Added Successfully! Form is now fresh.")
-                            st.rerun()
+        try:
+            for b in st.session_state.bookings:
+                supabase.table("booking").upsert(b).execute()
+        except Exception as e:
+            st.error(f"Supabase Sync Error: {e}")
+            
+        st.success("✅ Added Successfully! Form is now fresh.")
+        st.rerun()
 
     if st.session_state.bookings:
         st.markdown("### 📋 Active Bookings Directory & Management")

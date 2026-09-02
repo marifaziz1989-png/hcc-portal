@@ -118,6 +118,38 @@
                 }
             ],
             "activities_total": 15000
+        },
+        {
+            "id": "HCC-1008",
+            "name": "muhammd arif",
+            "phone": "03006123319",
+            "unit": "W01 - Woody A-Frame Studio",
+            "checkin": "03/09/2026",
+            "checkout": "04/09/2026",
+            "status": "Reserved",
+            "staytype": "Paid Regular",
+            "rent": "25000",
+            "food": 4500,
+            "food_items": [
+                {
+                    "name": "Mutton Karahi (1 KG)",
+                    "price": 4500,
+                    "comp": false
+                },
+                {
+                    "name": "Breakfast Platter",
+                    "price": 800,
+                    "comp": true
+                }
+            ],
+            "activities": [
+                {
+                    "name": "BBQ Setup",
+                    "price": 4000,
+                    "comp": true
+                }
+            ],
+            "activities_total": 0
         }
     ],
     "visitors": [],

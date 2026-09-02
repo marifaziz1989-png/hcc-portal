@@ -1,4 +1,10 @@
 import streamlit as st
+from supabase import create_client, Client
+
+# Supabase Credentials
+url = st.secrets["SUPABASE_URL"]
+key = st.secrets["SUPABASE_KEY"]
+supabase: Client = create_client(url, key)
 import pandas as pd
 from datetime import datetime, timedelta
 import json
@@ -350,7 +356,6 @@ if not pending_tasks_list:
 today_str = datetime.today().strftime('%d/%m/%Y')
 today_checkouts_list = []
 for b in st.session_state.bookings:
-    # Fixed checkout matching check (checked-out, booked, reserved, occupied all considered for today check-outs display)
     if b.get('checkout') == today_str and b.get('status') != 'Cancelled':
         today_checkouts_list.append(f"📤 {b.get('unit').split('-')[0]}: {b.get('name')}")
 

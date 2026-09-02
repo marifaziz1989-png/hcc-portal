@@ -626,9 +626,7 @@ with get_tab("🏨 Stay Bookings"):
         except Exception as e:
             st.error(f"Supabase Sync Error: {e}")
             
-        st.success("✅ Added Successfully! Form is now fresh.")
-        st.rerun()
-
+        st.toast("✅ Booking Added Successfully!")
     if st.session_state.bookings:
         st.markdown("### 📋 Active Bookings Directory & Management")
         

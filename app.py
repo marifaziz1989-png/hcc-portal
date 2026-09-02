@@ -622,7 +622,7 @@ with get_tab("🏨 Stay Bookings"):
                             save_data()
         try:
             for b in st.session_state.bookings:
-                supabase.table("booking").upsert(b).execute()
+                supabase.table("booking").upsert({"id": b.get("id"), "data": b}).execute()
         except Exception as e:
             st.error(f"Supabase Sync Error: {e}")
             

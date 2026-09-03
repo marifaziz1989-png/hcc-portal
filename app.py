@@ -738,12 +738,15 @@ with get_tab("🏨 Stay Bookings"):
                         try:
                             supabase.table("booking").delete().eq("id", del_bid).execute()
                         except Exception as e:
-                            st.warning("⚠️ Could not delete from cloud. Will sync later.")
+                            st.warning("⚠️ Could not delete from cloud.")
                         
                         target = st.session_state.bookings.pop(target_idx)
                         st.session_state.deleted_bookings.insert(0, {"record": target, "index": target_idx})
                         if len(st.session_state.deleted_bookings) > 5:
                             st.session_state.deleted_bookings.pop()
+                        save_data()
+                        st.success("Booking deleted and saved to recycle bin!")
+                        st.rerun() 
                         save_data()
                         st.success("Booking deleted and saved to recycle bin!")
                         st.rerun()

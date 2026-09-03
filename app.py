@@ -641,7 +641,7 @@ with get_tab("🏨 Stay Bookings"):
                             new_in = pd.to_datetime(check_in)
                             new_out = pd.to_datetime(check_out)
                             for b in st.session_state.bookings:
-                                if b.get("unit") == unit and b.get("status"] not in ["Checked-Out", "Cancelled"]:
+                                if b.get("unit") == unit and b.get("status") not in ["Checked-Out", "Cancelled"]:
                                     existing_in = pd.to_datetime(b.get("checkin", ""), format='%d/%m/%Y', errors='coerce')
                                     existing_out = pd.to_datetime(b.get("checkout", ""), format='%d/%m/%Y', errors='coerce')
                                     if pd.notnull(existing_in) and pd.notnull(existing_out):
@@ -736,23 +736,18 @@ with get_tab("🏨 Stay Bookings"):
         st.markdown("---")
         col_d1, col_d2 = st.columns(2)
         with col_d1:
-            del_b_options = ["-- Select --"] + [f"{b.get('id', 'N/A')} - {b.get('name', 'Guest')}" for b in st.session_state.bookings]
-            del_bid_raw = st.selectbox("Select Booking ID to Delete", options=del_b_options, key="del_b_select")
-            del_bid = del_bid_raw.split(" - ")[0] if del_bid_raw != "-- Select --" else "-- Select --"
-            
-            if st.button("🗑️ Delete Booking Record", type="primary"):
-                if del_bid != "-- Select --":
-                    target_idx = next((i for i, b in enumerate(st.session_state.bookings) if str(b.get("id")) == del_bid), None)
-                    if target_idx is not None:
-                        if supabase:
-                            try:
-                                supabase.table("booking").delete().eq("id", del_bid).execute()
-                            except:
-                                pass
-                        target = st.session_state.bookings.pop(target_idx)
-                        st.session_state.deleted_bookings.insert(0, {"record": target, "index": target_idx})
-                        if len(st.session_state.deleted_bookings) > 5:
-                            st.session_state.deleted_bookings.pop()
+            conflict_found = False
+                        if not force_override:
+                            new_in = pd.to_datetime(check_in)
+                            new_out = pd.to_datetime(check_out)
+                            for b in st.session_state.bookings:
+                                if b.get("unit") == unit and b.get("status") not in ["Checked-Out", "Cancelled"]:
+                                    existing_in = pd.to_datetime(b.get("checkin", ""), format='%d/%m/%Y', errors='coerce')
+                                    existing_out = pd.to_datetime(b.get("checkout", ""), format='%d/%m/%Y', errors='coerce')
+                                    if pd.notnull(existing_in) and pd.notnull(existing_out):
+                                        if max(new_in, existing_in) < min(new_out, existing_out):
+                                            conflict_found = True
+                                            break
                         save_data()
                         st.success("Booking deleted and saved to recycle bin!")
                         st.rerun()

@@ -749,6 +749,11 @@ with get_tab("🏨 Stay Bookings"):
                         st.rerun()
                 else:
                     st.warning("Please select a valid Booking ID.")
+                        save_data()
+                        st.success("Booking deleted and saved to recycle bin!")
+                        st.rerun()
+                else:
+                    st.warning("Please select a valid Booking ID.")
                 else:
                     st.warning("Please select a valid Booking ID.")
                     

@@ -622,9 +622,10 @@ with get_tab("🏨 Stay Bookings"):
                             save_data()
         try:
             for b in st.session_state.bookings:
-                    supabase.table("booking").upsert({"id": b.get("id"), "data": b}).execute()
+                supabase.table("booking").upsert({"id": b.get("id"), "data": b}).execute()
         except Exception as e:
             st.warning("⚠️ Internet connection unstable or offline. Changes saved locally, will sync when online.")
+            
         st.markdown("### 📋 Active Bookings Directory & Management")
         
         booking_options = ["-- Select --"] + [f"{b.get('id', 'N/A')} - {b.get('name', 'Guest')}" for b in st.session_state.bookings]
@@ -735,8 +736,10 @@ with get_tab("🏨 Stay Bookings"):
                 if del_bid != "-- Select --":
                     target_idx = next((i for i, b in enumerate(st.session_state.bookings) if str(b.get("id")) == del_bid), None)
                     if target_idx is not None:
-                        try: supabase.table("booking").delete().eq("id", del_bid).execute()
-                        except: pass
+                        try:
+                            supabase.table("booking").delete().eq("id", del_bid).execute()
+                        except:
+                            pass
                         
                         target = st.session_state.bookings.pop(target_idx)
                         st.session_state.deleted_bookings.insert(0, {"record": target, "index": target_idx})
@@ -745,21 +748,6 @@ with get_tab("🏨 Stay Bookings"):
                         save_data()
                         st.success("Booking deleted and saved to recycle bin!")
                         st.rerun()
-                else:
-                    st.warning("Please select a valid Booking ID.")
-                        save_data()
-                        st.success("Booking deleted and saved to recycle bin!")
-                        st.rerun() 
-                        save_data()
-                        st.success("Booking deleted and saved to recycle bin!")
-                        st.rerun()
-                else:
-                    st.warning("Please select a valid Booking ID.")
-                        save_data()
-                        st.success("Booking deleted and saved to recycle bin!")
-                        st.rerun()
-                else:
-                    st.warning("Please select a valid Booking ID.")
                 else:
                     st.warning("Please select a valid Booking ID.")
                     

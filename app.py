@@ -623,7 +623,7 @@ with get_tab("🏨 Stay Bookings"):
         try:
             for b in st.session_state.bookings:
             supabase.table("booking").upsert({"id": b.get("id"), "data": b}).execute()
-    except Exception as e:
+        except Exception as e:
         st.warning("⚠️ Internet connection unstable or offline. Changes saved locally, will sync when online.")
         st.toast("✅ Booking Added Successfully!")
     if st.session_state.bookings:

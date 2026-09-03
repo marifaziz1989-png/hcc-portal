@@ -625,7 +625,6 @@ with get_tab("🏨 Stay Bookings"):
             supabase.table("booking").upsert({"id": b.get("id"), "data": b}).execute()
         except Exception as e:
         st.warning("⚠️ Internet connection unstable or offline. Changes saved locally, will sync when online.")
-        st.toast("✅ Booking Added Successfully!")
     if st.session_state.bookings:
         st.markdown("### 📋 Active Bookings Directory & Management")
         

@@ -1,26 +1,26 @@
 import streamlit as st
+from supabase import create_client, Client
 import pandas as pd
 from datetime import datetime, timedelta
 import json
 import os
 import streamlit.components.v1 as components
 
-# --- SUPABASE CONFIGURATION (SAFE FALLBACK) ---
-try:
-    from supabase import create_client, Client
-    url = st.secrets.get("SUPABASE_URL", "")
-    key = st.secrets.get("SUPABASE_KEY", "")
-    supabase: Client = create_client(url, key) if url and key else None
-except Exception:
-    supabase = None
-
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="Holiday Country Club | Executive Portal",
+    page_title="Holiday Country Club | Portal",
     page_icon="🏨",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+# --- SUPABASE INITIALIZATION (SAFE HANDLING) ---
+try:
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_KEY"]
+    supabase: Client = create_client(url, key)
+except Exception:
+    supabase = None
 
 # --- ADVANCED DESKTOP DARK THEME, ANIMATIONS & PRINT CSS ---
 st.markdown("""
@@ -46,15 +46,12 @@ st.markdown("""
         border: 1px solid rgba(255,255,255,0.1);
     }
     
-    /* --- BLINKING ANIMATION FOR HEADINGS --- */
     @keyframes blinkEffect {
         0% { opacity: 1; }
         50% { opacity: 0.3; }
         100% { opacity: 1; }
     }
-    .blinking-heading {
-        animation: blinkEffect 1.5s infinite;
-    }
+    .blinking-heading { animation: blinkEffect 1.5s infinite; }
     
     .panel-container {
         background: linear-gradient(135deg, #1a1c29, #212538);
@@ -92,8 +89,6 @@ st.markdown("""
         background: #1a1c29; padding: 30px; border-radius: 10px; border: 1px dashed #475569;
         box-shadow: 0 4px 6px rgba(0,0,0,0.5); margin-top: 20px; font-family: monospace; color: #e2e8f0;
     }
-    
-    /* --- ELEGANT FOOTER STYLE --- */
     .decent-footer {
         background: linear-gradient(135deg, #1a1c29, #0f172a);
         border-top: 1px solid #3b82f6;
@@ -105,14 +100,8 @@ st.markdown("""
         font-size: 13px;
         box-shadow: 0 -4px 10px rgba(0,0,0,0.3);
     }
-    .decent-footer strong {
-        color: #ffffff;
-    }
-    .decent-footer .dev-name {
-        color: #f97316;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-    }
+    .decent-footer strong { color: #ffffff; }
+    .decent-footer .dev-name { color: #f97316; font-weight: 700; letter-spacing: 0.5px; }
 
     @media print {
         body { background-color: white !important; color: black !important; }
@@ -147,9 +136,7 @@ def load_data():
         {"name": "Bonfire", "price": 3500},
         {"name": "Birthday Decor", "price": 5000},
         {"name": "BBQ Setup", "price": 4000},
-        {"name": "Luggage / Pick & Drop Service", "price": 2500},
-        {"name": "Airport/City Transfer", "price": 4000},
-        {"name": "Guided Resort Tour", "price": 1500}
+        {"name": "Luggage / Pick & Drop Service", "price": 2500}
     ]
     default_menu = [
         {"item": "Chicken Karahi (1 KG)", "price": 2500},
@@ -170,10 +157,6 @@ def load_data():
                 del_v = data.get("deleted_visitors", [])
                 safe_del_v = [item for item in del_v if isinstance(item, dict) and "record" in item]
                 
-                del_units = data.get("deleted_units", [])
-                del_menu = data.get("deleted_menu", [])
-                del_services = data.get("deleted_services", [])
-
                 return (
                     data.get("units", default_units), 
                     data.get("bookings", []), 
@@ -184,9 +167,9 @@ def load_data():
                     data.get("housekeeping", {u: "Clean" for u in data.get("units", default_units)}),
                     safe_del_b,
                     safe_del_v,
-                    del_units,
-                    del_menu,
-                    del_services
+                    data.get("deleted_units", []),
+                    data.get("deleted_menu", []),
+                    data.get("deleted_services", [])
                 )
         except Exception:
             pass
@@ -274,44 +257,159 @@ FULL_ACCESS = ["CEO", "General Manager"]
 MANAGEMENT_ACCESS = ["CEO", "General Manager", "Resort Manager"]
 OPERATIONS_ACCESS = ["CEO", "General Manager", "Resort Manager", "Front Desk Officer"]
 
+# --- LOGIN & PUBLIC GUEST BOOKING LANDING PAGE ---
 if not st.session_state.logged_in:
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 1.2, 1])
-    with col2:
-        st.markdown("""
-        <div style='background: #1a1c29; padding: 35px; border-radius: 10px; border: 1px solid #3b82f6; text-align: center;'>
-            <h2 style='color: #ffffff; margin-bottom: 5px; font-weight: 800;'>Holiday Country Club</h2>
-            <p style='color: #94a3b8; font-size: 12px; margin-bottom: 25px; letter-spacing: 1px;'>SECURE EXECUTIVE PORTAL</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        with st.form("login_form"):
-            u_input = st.text_input("Username")
-            p_input = st.text_input("Password", type="password")
-            submit_login = st.form_submit_button("Secure Login", use_container_width=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    portal_mode = st.radio("Select Portal Access Mode", ["🔒 Executive Staff Login", "🏨 Public Guest Booking Portal"], horizontal=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    if portal_mode == "🔒 Executive Staff Login":
+        col1, col2, col3 = st.columns([1, 1.2, 1])
+        with col2:
+            st.markdown("""
+            <div style='background: #1a1c29; padding: 35px; border-radius: 10px; border: 1px solid #3b82f6; text-align: center;'>
+                <h2 style='color: #ffffff; margin-bottom: 5px; font-weight: 800;'>Holiday Country Club</h2>
+                <p style='color: #94a3b8; font-size: 12px; margin-bottom: 25px; letter-spacing: 1px;'>SECURE EXECUTIVE PORTAL</p>
+            </div>
+            """, unsafe_allow_html=True)
             
-            if submit_login:
-                if u_input in USERS and USERS[u_input]["password"] == p_input:
-                    st.session_state.logged_in = True
-                    st.session_state.username = u_input
-                    st.session_state.role = USERS[u_input]["role"]
-                    st.session_state.name = USERS[u_input]["name"]
-                    st.rerun()
-                else:
-                    st.error("Invalid Username or Password!")
+            with st.form("login_form"):
+                u_input = st.text_input("Username")
+                p_input = st.text_input("Password", type="password")
+                submit_login = st.form_submit_button("Secure Login", use_container_width=True)
+                
+                if submit_login:
+                    if u_input in USERS and USERS[u_input]["password"] == p_input:
+                        st.session_state.logged_in = True
+                        st.session_state.username = u_input
+                        st.session_state.role = USERS[u_input]["role"]
+                        st.session_state.name = USERS[u_input]["name"]
+                        st.rerun()
+                    else:
+                        st.error("Invalid Username or Password!")
+    else:
+        # --- PUBLIC GUEST BOOKING PORTAL FORM ---
+        st.markdown("<h2 style='text-align: center; color: #f97316;'>🏨 Resort Booking & Reservation Portal</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #94a3b8;'>Please fill out the form below to secure your reservation at Holiday Country Club, Murree.</p><br>", unsafe_allow_html=True)
 
-        st.markdown("""
-        <div style='text-align: center; margin-top: 30px; font-size: 12px; color: #64748b;'>
-            © 2026 <strong>Holiday Country Club</strong>. All Rights Reserved.<br>
-            <span style='color: #94a3b8;'>Engineered & Developed with Excellence by </span><span style='color: #f97316; font-weight: 700;'>M. Arif Aziz</span>
-        </div>
-        """, unsafe_allow_html=True)
+        with st.form("resort_booking_form"):
+            st.subheader("1. Guest Personal Information")
+            col1, col2 = st.columns(2)
+            with col1:
+                full_name = st.text_input("Full Name (with Title e.g., Mr./Mrs.)")
+                contact = st.text_input("Mobile / WhatsApp Number")
+                email = st.text_input("Email Address")
+            with col2:
+                address = st.text_input("City / Residential Address")
+                cnic_passport = st.text_input("CNIC / Passport Number")
+
+            st.markdown("---")
+            st.subheader("2. Reservation & Stay Details")
+            col3, col4 = st.columns(2)
+            with col3:
+                check_in = st.date_input("Check-in Date")
+                adults = st.number_input("Number of Adults", min_value=1, value=2, step=1)
+            with col4:
+                check_out = st.date_input("Check-out Date")
+                children = st.number_input("Number of Children", min_value=0, value=0, step=1)
+
+            st.markdown("---")
+            st.subheader("3. Accommodation Type")
+            col5, col6 = st.columns(2)
+            with col5:
+                room_category = st.selectbox(
+                    "Select Accommodation Type",
+                    st.session_state.units
+                )
+            with col6:
+                units = st.number_input("Number of Units", min_value=1, value=1, step=1)
+                bedding = st.selectbox("Bedding Preference", ["Double Bed", "Twin Beds"])
+
+            st.markdown("---")
+            st.subheader("4. Special Requests & Add-ons")
+            special_requests = st.text_area("Special Requests (e.g., food allergies, honeymoon setup)")
+            addons = st.multiselect(
+                "Add-on Services",
+                [s["name"] for s in st.session_state.services_catalog]
+            )
+
+            st.markdown("---")
+            st.subheader("5. Payment & Billing Details")
+            col7, col8 = st.columns(2)
+            with col7:
+                payment_method = st.selectbox(
+                    "Advance Payment Method",
+                    ["Bank Transfer", "JazzCash / EasyPaisa", "Credit/Debit Card", "Cash on Arrival"]
+                )
+            with col8:
+                advance_amount = st.number_input("Advance Amount Paid (PKR)", min_value=0, value=0, step=1000)
+
+            st.markdown("---")
+            st.subheader("6. Terms & Conditions")
+            terms_accepted = st.checkbox("I agree to the Resort's Cancellation Policy and Check-in/Check-out Rules.")
+
+            submit_booking = st.form_submit_button(label="Submit Booking")
+
+            if submit_booking:
+                if not terms_accepted:
+                    st.error("Please accept the Terms & Conditions to proceed.")
+                elif not full_name.strip() or not contact.strip():
+                    st.warning("Please fill in your Full Name and Contact Number.")
+                else:
+                    # Generate booking ID
+                    existing_nums = [int(str(b.get("id")).split("-")[1]) for b in st.session_state.bookings if str(b.get("id")).startswith("HCC-")]
+                    next_id_num = max(existing_nums) + 1 if existing_nums else 1001
+                    auto_b_id = f"HCC-{next_id_num}"
+
+                    new_booking_dict = {
+                        "id": auto_b_id, "name": full_name, "phone": contact, "unit": room_category,
+                        "checkin": check_in.strftime('%d/%m/%Y'), "checkout": check_out.strftime('%d/%m/%Y'), 
+                        "status": "Reserved", "staytype": "Paid Regular", "rent": "0", "food": 0,
+                        "food_items": [], "activities": [], "activities_total": 0
+                    }
+                    st.session_state.bookings.append(new_booking_dict)
+                    save_data()
+                    if supabase:
+                        try:
+                            supabase.table("booking").upsert({"id": auto_b_id, "data": new_booking_dict}).execute()
+                        except Exception:
+                            pass
+
+                    st.success(f"Booking submitted successfully! Your Booking Reference ID is {auto_b_id}.")
+                    st.markdown("### Booking Summary")
+                    st.json({
+                        "Booking Reference ID": auto_b_id,
+                        "Full Name": full_name,
+                        "Contact": contact,
+                        "Email": email,
+                        "City/Address": address,
+                        "CNIC/Passport": cnic_passport,
+                        "Check-in Date": str(check_in),
+                        "Check-out Date": str(check_out),
+                        "Guests": {"Adults": adults, "Children": children},
+                        "Accommodation": room_category,
+                        "Units Booked": units,
+                        "Bedding Preference": bedding,
+                        "Special Requests": special_requests if special_requests else "None",
+                        "Add-ons": addons if addons else "None",
+                        "Payment Method": payment_method,
+                        "Advance Paid": f"PKR {advance_amount}"
+                    })
+
+    # --- LANDING PAGE FOOTER ---
+    st.markdown("""
+    <div style='text-align: center; margin-top: 30px; font-size: 12px; color: #64748b;'>
+        © 2026 <strong>Holiday Country Club</strong>. All Rights Reserved.<br>
+        <span style='color: #94a3b8;'>Engineered & Developed with Excellence by </span><span style='color: #f97316; font-weight: 700;'>M. Arif Aziz</span>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.stop()
 
+# --- EXECUTIVE PORTAL LOGGED IN CODE ---
 role = st.session_state.role
 
-# --- CORPORATE HEADER BAR ---
 st.markdown(f"""
 <div class='dark-header'>
     <div style='display: flex; align-items: center; gap: 15px;'>
@@ -347,7 +445,7 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-# --- PREPARING PENDING TASKS & TODAY CHECK-OUTS DATA ---
+# --- TASKS & CHECKOUTS CAROUSEL ---
 pending_tasks_list = []
 for u, status in st.session_state.housekeeping.items():
     if status == "Maintenance":
@@ -367,69 +465,44 @@ for b in st.session_state.bookings:
 if not today_checkouts_list:
     today_checkouts_list.append(f"📅 No check-outs for today ({today_str}).")
 
-# --- DYNAMIC 5-SECOND FLIP PANELS SECTION ---
 panels_html = f"""
 <div style="display: flex; gap: 20px; width: 100%; font-family: sans-serif; margin-bottom: 20px;">
-    
-    <!-- PENDING TASKS PANEL -->
     <div style="flex: 1; background: linear-gradient(135deg, #1a1c29, #251b2d); border: 1px solid #f97316; padding: 12px 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
-        <div class="blinking-heading" style="font-size: 12px; font-weight: 700; color: #f97316; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+        <div class="blinking-heading" style="font-size: 12px; font-weight: 700; color: #f97316; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
             <span>⚡</span> PENDING & CLEANING TASKS
         </div>
-        <div id="pending-carousel" style="min-height: 50px; display: flex; align-items: center; color: #ffedd5; font-size: 11px; font-weight: 400;">
-            Loading...
-        </div>
+        <div id="pending-carousel" style="min-height: 50px; display: flex; align-items: center; color: #ffedd5; font-size: 11px;">Loading...</div>
     </div>
-
-    <!-- TODAY CHECK-OUTS PANEL -->
     <div style="flex: 1; background: linear-gradient(135deg, #1a1c29, #1e3a8a); border: 1px solid #3b82f6; padding: 12px 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
-        <div class="blinking-heading" style="font-size: 12px; font-weight: 700; color: #60a5fa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+        <div class="blinking-heading" style="font-size: 12px; font-weight: 700; color: #60a5fa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
             <span>📅</span> TODAY CHECK-OUTS
         </div>
-        <div id="checkout-carousel" style="min-height: 50px; display: flex; align-items: center; color: #e0f2fe; font-size: 11px; font-weight: 400;">
-            Loading...
-        </div>
+        <div id="checkout-carousel" style="min-height: 50px; display: flex; align-items: center; color: #e0f2fe; font-size: 11px;">Loading...</div>
     </div>
-
 </div>
-
 <script>
     const pendingTasks = {json.dumps(pending_tasks_list)};
     const todayCheckouts = {json.dumps(today_checkouts_list)};
-
-    let pIndex = 0;
-    let cIndex = 0;
-
+    let pIndex = 0, cIndex = 0;
     function chunkArray(arr, size) {{
         let results = [];
-        for (let i = 0; i < arr.length; i += size) {{
-            results.push(arr.slice(i, i + size));
-        }}
+        for (let i = 0; i < arr.length; i += size) results.push(arr.slice(i, i + size));
         return results;
     }}
-
     const pChunks = chunkArray(pendingTasks, 6);
     const cChunks = chunkArray(todayCheckouts, 6);
-
     function renderGrid(items) {{
         let html = '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 8px; width: 100%;">';
-        items.forEach(item => {{
-            html += `<div style="background: rgba(255,255,255,0.05); padding: 4px 6px; border-radius: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 400;">• ${{item}}</div>`;
-        }});
+        items.forEach(item => {{ html += `<div style="background: rgba(255,255,255,0.05); padding: 4px 6px; border-radius: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px;">• ${{item}}</div>`; }});
         html += '</div>';
         return html;
     }}
-
     function updateCarousels() {{
-        const pEl = document.getElementById("pending-carousel");
-        pEl.innerHTML = renderGrid(pChunks[pIndex]);
+        document.getElementById("pending-carousel").innerHTML = renderGrid(pChunks[pIndex]);
         pIndex = (pIndex + 1) % pChunks.length;
-
-        const cEl = document.getElementById("checkout-carousel");
-        cEl.innerHTML = renderGrid(cChunks[cIndex]);
+        document.getElementById("checkout-carousel").innerHTML = renderGrid(cChunks[cIndex]);
         cIndex = (cIndex + 1) % cChunks.length;
     }}
-
     updateCarousels();
     setInterval(updateCarousels, 5000);
 </script>
@@ -444,12 +517,11 @@ if role in MANAGEMENT_ACCESS or role == "Auditor":
     reserved = sum(1 for b in st.session_state.bookings if b.get("status") == "Reserved")
     available = max(0, total_units - (occupied + upcoming + reserved))
     
-    gross_revenue, paid_rent, paid_food, paid_act, total_comp = 0, 0, 0, 0, 0
+    paid_rent, paid_food, paid_act, total_comp = 0, 0, 0, 0
     for b in st.session_state.bookings:
         r = int(b.get("rent", 0)) if str(b.get("rent", 0)).isdigit() else 0
         f = int(b.get("food", 0)) if str(b.get("food", 0)).isdigit() else 0
         a = int(b.get("activities_total", 0)) if str(b.get("activities_total", 0)).isdigit() else 0
-        
         if b.get("staytype") == "Complimentary":
             total_comp += (r + f + a)
         else:
@@ -495,15 +567,11 @@ tabs = st.tabs(tab_titles)
 def get_tab(name):
     return tabs[tab_titles.index(name)] if name in tab_titles else None
 
-# 1. STAY BOOKINGS TAB (Updated with complete Guest Reservation Portal fields)
+# 1. STAY BOOKINGS TAB
 with get_tab("🏨 Stay Bookings"):
     st.markdown("<h3 style='color: #f97316;'>🚀 Upcoming Bookings Quick-Tracking Panel</h3>", unsafe_allow_html=True)
     upcoming_list = [b for b in st.session_state.bookings if b.get("status") in ["Booked", "Reserved"]]
-    
-    upcoming_list = sorted(
-        upcoming_list, 
-        key=lambda x: pd.to_datetime(x.get('checkin', ''), format='%d/%m/%Y', errors='coerce') or pd.Timestamp.max
-    )
+    upcoming_list = sorted(upcoming_list, key=lambda x: pd.to_datetime(x.get('checkin', ''), format='%d/%m/%Y', errors='coerce') or pd.Timestamp.max)
     
     if upcoming_list:
         up_cols = st.columns(min(5, len(upcoming_list)))
@@ -524,89 +592,27 @@ with get_tab("🏨 Stay Bookings"):
     st.markdown("---")
 
     if role in OPERATIONS_ACCESS:
-        existing_nums = []
-        for b in st.session_state.bookings:
-            b_id_str = str(b.get("id", ""))
-            if b_id_str.startswith("HCC-"):
-                try:
-                    existing_nums.append(int(b_id_str.split("-")[1]))
-                except:
-                    pass
+        existing_nums = [int(str(b.get("id")).split("-")[1]) for b in st.session_state.bookings if str(b.get("id")).startswith("HCC-")]
         next_id_num = max(existing_nums) + 1 if existing_nums else 1001
         auto_b_id = f"HCC-{next_id_num}"
 
-        with st.expander("➕ Create New Stay Booking (Comprehensive Guest Portal Form)", expanded=False):
-            with st.form("resort_booking_form", clear_on_submit=True):
+        with st.expander("➕ Create New Stay Booking", expanded=False):
+            with st.form("booking_form", clear_on_submit=True):
                 b_id = st.text_input("Booking ID (Sequential Unique)", value=auto_b_id)
-                st.markdown("---")
+                colA, colB = st.columns(2)
+                g_name = colA.text_input("Guest Name")
+                g_phone = colB.text_input("Contact Number")
+                unit = colA.selectbox("Assign Cottage", options=st.session_state.units)
+                status = colB.selectbox("Status", ["Reserved", "Booked", "Occupied", "Checked-Out", "Cancelled"])
                 
-                # 1. Guest Personal Information
-                st.subheader("1. Guest Personal Information")
-                col1, col2 = st.columns(2)
-                with col1:
-                    full_name = st.text_input("Full Name (with Title e.g., Mr./Mrs.)")
-                    contact = st.text_input("Mobile / WhatsApp Number")
-                    email = st.text_input("Email Address")
-                with col2:
-                    address = st.text_input("City / Residential Address")
-                    cnic_passport = st.text_input("CNIC / Passport Number")
-
-                st.markdown("---")
+                c_in_date = colA.date_input("Check-in Date", datetime.today())
+                c_out_date = colB.date_input("Check-out Date", datetime.today() + timedelta(days=1))
                 
-                # 2. Reservation & Stay Details
-                st.subheader("2. Reservation & Stay Details")
-                col3, col4 = st.columns(2)
-                with col3:
-                    check_in = st.date_input("Check-in Date")
-                    adults = st.number_input("Number of Adults", min_value=1, value=2, step=1)
-                with col4:
-                    check_out = st.date_input("Check-out Date")
-                    children = st.number_input("Number of Children", min_value=0, value=0, step=1)
-
-                st.markdown("---")
+                staytype = colA.selectbox("Stay Type", ["Paid Regular", "Complimentary", "Corporate"])
+                rent = colB.text_input("Cottage Rent Bill (PKR)", "0")
+                force_override = st.checkbox("⚠️ Force Manual Override (Bypass Conflict Check)")
                 
-                # 3. Accommodation Type Selection
-                st.subheader("3. Accommodation Type")
-                col5, col6 = st.columns(2)
-                with col5:
-                    room_category = st.selectbox(
-                        "Select Accommodation Type",
-                        ["Deluxe Room", "Family Suite", "Wooden Cottage", "Treehouse", "Jacuzzi Villa"]
-                    )
-                    unit = st.selectbox("Assign Specific Cottage / Unit", options=st.session_state.units)
-                with col6:
-                    units_count = st.number_input("Number of Units", min_value=1, value=1, step=1)
-                    bedding = st.selectbox("Bedding Preference", ["Double Bed", "Twin Beds"])
-                    status = st.selectbox("Status", ["Reserved", "Booked", "Occupied", "Checked-Out", "Cancelled"], index=0)
-                    staytype = st.selectbox("Stay Type", ["Paid Regular", "Complimentary", "Corporate"])
-                    rent = st.text_input("Cottage Rent Bill (PKR)", "0")
-
                 st.markdown("---")
-                
-                # 4. Special Requests & Add-ons
-                st.subheader("4. Special Requests & Add-ons")
-                special_requests = st.text_area("Special Requests (e.g., food allergies, honeymoon setup)")
-                addons = st.multiselect(
-                    "Add-on Services",
-                    ["Airport/City Transfer", "Jacuzzi Access", "BBQ Arrangement", "Guided Resort Tour"]
-                )
-
-                st.markdown("---")
-                
-                # 5. Payment & Billing Details
-                st.subheader("5. Payment & Billing Details")
-                col7, col8 = st.columns(2)
-                with col7:
-                    payment_method = st.selectbox(
-                        "Advance Payment Method",
-                        ["Bank Transfer", "JazzCash / EasyPaisa", "Credit/Debit Card", "Cash on Arrival"]
-                    )
-                with col8:
-                    advance_amount = st.number_input("Advance Amount Paid (PKR)", min_value=0, value=0, step=1000)
-
-                st.markdown("---")
-                
-                # Restaurant Menu Order Selection
                 st.markdown("<h4 style='color: #f97316;'>🍲 Restaurant Menu Order</h4>", unsafe_allow_html=True)
                 menu_items_ordered, menu_total = [], 0
                 for i, m in enumerate(st.session_state.restaurant_menu):
@@ -616,30 +622,30 @@ with get_tab("🏨 Stay Bookings"):
                     if m_choice != "Unselected":
                         is_comp = (m_choice == "Complimentary")
                         menu_items_ordered.append({'name': m['item'], 'price': m['price'], 'comp': is_comp})
-                        if not is_comp:
-                            menu_total += m['price']
-
-                st.markdown("---")
+                        if not is_comp: menu_total += m['price']
                 
-                # 6. Terms & Conditions
-                st.subheader("6. Terms & Conditions")
-                terms_accepted = st.checkbox("I agree to the Resort's Cancellation Policy and Check-in/Check-out Rules.")
-
-                force_override = st.checkbox("⚠️ Force Manual Override (Bypass Conflict Check)")
-                submit_button = st.form_submit_button(label="Submit Booking")
-
-                if submit_button:
-                    if not terms_accepted:
-                        st.error("Please accept the Terms & Conditions to proceed.")
-                    elif not full_name.strip() or not contact.strip():
-                        st.warning("Please fill in your Full Name and Contact Number.")
-                    elif any(str(b.get("id")) == b_id for b in st.session_state.bookings):
+                st.markdown("---")
+                st.markdown("<h4 style='color: #f97316;'>⚡ Resort Activities & Services</h4>", unsafe_allow_html=True)
+                selected_act, act_total = [], 0
+                for i, s in enumerate(st.session_state.services_catalog):
+                    cols_s = st.columns([3, 2])
+                    cols_s[0].markdown(f"**{s['name']}** (Rs. {s['price']})")
+                    s_choice = cols_s[1].radio("Type", ["Unselected", "Paid", "Complimentary"], key=f"b_act_choice_{i}", horizontal=True, label_visibility="collapsed")
+                    if s_choice != "Unselected":
+                        is_comp = (s_choice == "Complimentary")
+                        selected_act.append({'name': s['name'], 'price': s['price'], 'comp': is_comp})
+                        if not is_comp: act_total += s['price']
+                
+                submit_booking = st.form_submit_button("Save Booking Entry")
+                if submit_booking:
+                    if any(str(b.get("id")) == b_id for b in st.session_state.bookings):
                         st.error(f"❌ Error: Booking ID '{b_id}' already exists!")
+                    elif not g_name:
+                        st.error("❌ Error: Guest Name cannot be empty.")
                     else:
                         conflict_found = False
                         if not force_override:
-                            new_in = pd.to_datetime(check_in)
-                            new_out = pd.to_datetime(check_out)
+                            new_in, new_out = pd.to_datetime(c_in_date), pd.to_datetime(c_out_date)
                             for b in st.session_state.bookings:
                                 if b.get("unit") == unit and b.get("status") not in ["Checked-Out", "Cancelled"]:
                                     existing_in = pd.to_datetime(b.get("checkin", ""), format='%d/%m/%Y', errors='coerce')
@@ -648,33 +654,24 @@ with get_tab("🏨 Stay Bookings"):
                                         if max(new_in, existing_in) < min(new_out, existing_out):
                                             conflict_found = True
                                             break
-                        
                         if conflict_found:
                             st.error(f"❌ Conflict Error: Cottage '{unit}' is booked during these dates!")
                         else:
                             new_booking_dict = {
-                                "id": b_id, "name": full_name, "phone": contact, "email": email,
-                                "address": address, "cnic_passport": cnic_passport, "unit": unit,
-                                "checkin": check_in.strftime('%d/%m/%Y'), "checkout": check_out.strftime('%d/%m/%Y'), 
-                                "adults": adults, "children": children, "room_category": room_category,
-                                "units_booked": units_count, "bedding": bedding, "special_requests": special_requests,
-                                "addons": addons, "payment_method": payment_method, "advance_amount": advance_amount,
-                                "terms_accepted": terms_accepted, "status": status, "staytype": staytype, 
-                                "rent": rent, "food": menu_total, "food_items": menu_items_ordered,
-                                "activities": [], "activities_total": 0
+                                "id": b_id, "name": g_name, "phone": g_phone, "unit": unit,
+                                "checkin": c_in_date.strftime('%d/%m/%Y'), "checkout": c_out_date.strftime('%d/%m/%Y'), 
+                                "status": status, "staytype": staytype, "rent": rent, "food": menu_total,
+                                "food_items": menu_items_ordered, "activities": selected_act, "activities_total": act_total
                             }
                             st.session_state.bookings.append(new_booking_dict)
                             st.session_state.housekeeping[unit] = "Dirty"
                             save_data()
                             if supabase:
-                                try:
-                                    supabase.table("booking").upsert({"id": b_id, "data": new_booking_dict}).execute()
-                                except Exception:
-                                    pass
-                            st.success("Booking submitted successfully!")
+                                try: supabase.table("booking").upsert({"id": b_id, "data": new_booking_dict}).execute()
+                                except: pass
+                            st.success("Booking saved successfully!")
+                            st.rerun()
 
-        st.markdown("### 📋 Active Bookings Directory & Management")
-        
         booking_options = ["-- Select --"] + [f"{b.get('id', 'N/A')} - {b.get('name', 'Guest')}" for b in st.session_state.bookings]
         with st.expander("🛠️ Edit Booking, Update Running Bills & Mark Check-Out", expanded=True):
             edit_b_sel_raw = st.selectbox("Select Booking ID to Edit / Update / Check-Out", options=booking_options, key="edit_b_target")
@@ -682,21 +679,17 @@ with get_tab("🏨 Stay Bookings"):
             
             if edit_b_sel != "-- Select --":
                 target_b = next((b for b in st.session_state.bookings if str(b.get("id")) == edit_b_sel), None)
-                
                 if target_b:
                     with st.form("update_booking_form"):
-                        st.markdown(f"**Editing Booking:** {target_b.get('id', 'N/A')} - **Guest:** {target_b.get('name', 'N/A')} ({target_b.get('unit', 'N/A')})")
+                        st.markdown(f"**Editing Booking:** {target_b.get('id')} - **Guest:** {target_b.get('name')} ({target_b.get('unit')})")
                         uc_col1, uc_col2 = st.columns(2)
                         current_status = target_b.get('status', 'Reserved')
                         status_list = ["Reserved", "Booked", "Occupied", "Checked-Out", "Cancelled"]
-                        status_idx = status_list.index(current_status) if current_status in status_list else 2
-                        new_status = uc_col1.selectbox("Update Status", status_list, index=status_idx)
+                        new_status = uc_col1.selectbox("Update Status", status_list, index=status_list.index(current_status) if current_status in status_list else 2)
                         new_rent = uc_col2.text_input("Update Rent (PKR)", value=str(target_b.get("rent", "0")))
                         
-                        current_staytype = target_b.get("staytype", "Paid Regular")
                         staytype_list = ["Paid Regular", "Complimentary", "Corporate"]
-                        staytype_idx = staytype_list.index(current_staytype) if current_staytype in staytype_list else 0
-                        new_staytype = st.selectbox("Update Stay Type", staytype_list, index=staytype_idx)
+                        new_staytype = st.selectbox("Update Stay Type", staytype_list, index=staytype_list.index(target_b.get("staytype", "Paid Regular")) if target_b.get("staytype") in staytype_list else 0)
                         
                         submit_updates = st.form_submit_button("Save & Update Booking / Check-Out")
                         if submit_updates:
@@ -707,79 +700,22 @@ with get_tab("🏨 Stay Bookings"):
                                 st.session_state.housekeeping[target_b['unit']] = "Dirty"
                             save_data()
                             if supabase:
-                                try:
-                                    supabase.table("booking").upsert({"id": target_b.get("id"), "data": target_b}).execute()
-                                except:
-                                    pass
-                            st.success(f"✅ Booking {edit_b_sel} updated successfully!")
+                                try: supabase.table("booking").upsert({"id": target_b.get("id"), "data": target_b}).execute()
+                                except: pass
+                            st.success("Booking updated successfully!")
                             st.rerun()
 
         table_rows = []
         for b in st.session_state.bookings:
             r_val = int(b.get("rent", 0)) if str(b.get("rent", 0)).isdigit() else 0
             f_val = int(b.get("food", 0)) if str(b.get("food", 0)).isdigit() else 0
-            grand = r_val + f_val
-            
+            a_val = int(b.get("activities_total", 0)) if str(b.get("activities_total", 0)).isdigit() else 0
             table_rows.append({
-                "ID": b.get('id', 'N/A'),
-                "Name": b.get('name', 'N/A'),
-                "Phone": b.get('phone', 'N/A'),
-                "Unit": b.get('unit', 'N/A'),
-                "Check-In": b.get('checkin', 'N/A'),
-                "Check-Out": b.get('checkout', 'N/A'),
-                "Status": b.get('status', 'N/A'),
-                "Type": b.get('staytype', 'Paid Regular'),
-                "Grand Total (PKR)": f"Rs. {grand:,}"
+                "ID": b.get('id', 'N/A'), "Name": b.get('name', 'N/A'), "Phone": b.get('phone', 'N/A'),
+                "Unit": b.get('unit', 'N/A'), "Check-In": b.get('checkin', 'N/A'), "Check-Out": b.get('checkout', 'N/A'),
+                "Status": b.get('status', 'N/A'), "Type": b.get('staytype', 'Paid Regular'), "Grand Total (PKR)": f"Rs. {r_val + f_val + a_val:,}"
             })
         st.dataframe(pd.DataFrame(table_rows), use_container_width=True, hide_index=True)
-        
-        st.markdown("---")
-        col_d1, col_d2 = st.columns(2)
-        with col_d1:
-            conflict_found = False
-                        if not force_override:
-                            new_in = pd.to_datetime(check_in)
-                            new_out = pd.to_datetime(check_out)
-                            for b in st.session_state.bookings:
-                                if b.get("unit") == unit and b.get("status") not in ["Checked-Out", "Cancelled"]:
-                                    existing_in = pd.to_datetime(b.get("checkin", ""), format='%d/%m/%Y', errors='coerce')
-                                    existing_out = pd.to_datetime(b.get("checkout", ""), format='%d/%m/%Y', errors='coerce')
-                                    if pd.notnull(existing_in) and pd.notnull(existing_out):
-                                        if max(new_in, existing_in) < min(new_out, existing_out):
-                                            conflict_found = True
-                                            break
-                        save_data()
-                        st.success("Booking deleted and saved to recycle bin!")
-                        st.rerun()
-                else:
-                    st.warning("Please select a valid Booking ID.")
-                    
-        with col_d2:
-            valid_deleted_b = [item for item in st.session_state.deleted_bookings if isinstance(item, dict) and "record" in item]
-            if valid_deleted_b:
-                undo_options = ["-- Select --"] + [f"{item['record'].get('id', 'HCC')} - {item['record'].get('name', 'Guest')}" for item in valid_deleted_b]
-                undo_sel = st.selectbox("Restore Deleted Booking (Undo)", options=undo_options, key="undo_b_select")
-                if st.button("🔄 Undo / Restore Booking"):
-                    if undo_sel != "-- Select --":
-                        chosen_id = undo_sel.split(" - ")[0]
-                        item_entry = next((item for item in valid_deleted_b if str(item['record'].get('id')) == chosen_id), None)
-                        if item_entry:
-                            orig_idx = min(item_entry.get('index', 0), len(st.session_state.bookings))
-                            restored_rec = item_entry['record']
-                            st.session_state.bookings.insert(orig_idx, restored_rec)
-                            st.session_state.deleted_bookings = [item for item in st.session_state.deleted_bookings if str(item.get('record', {}).get('id')) != chosen_id]
-                            save_data()
-                            if supabase:
-                                try:
-                                    supabase.table("booking").upsert({"id": restored_rec.get("id"), "data": restored_rec}).execute()
-                                except:
-                                    pass
-                            st.success("Booking restored successfully!")
-                            st.rerun()
-            else:
-                st.info("Recycle bin is empty.")
-    else:
-        st.info("No active bookings found.")
 
 # 2. AVAILABILITY CHECKER TAB
 with get_tab("🔍 Availability Checker"):
@@ -790,58 +726,25 @@ with get_tab("🔍 Availability Checker"):
     
     if st.button("Check Single Unit Status"):
         target_dt = pd.to_datetime(check_date)
-        target_date_str = check_date.strftime('%d/%m/%Y')
-        
         hk_status = st.session_state.housekeeping.get(check_unit, "Clean")
         if hk_status in ["Maintenance", "Dirty"]:
-            if hk_status == "Maintenance":
-                st.error(f"🛠️ **{check_unit}** is **UNDER MAINTENANCE** in Housekeeping records and is unavailable for booking on {target_date_str}!")
-            else:
-                st.warning(f"🧹 **{check_unit}** is currently marked as **DIRTY** in Housekeeping (Turnaround cleaning required).")
+            st.error(f"⚠️ **{check_unit}** status is **{hk_status}** in housekeeping records.")
         else:
-            checkout_match, checkin_match, active_stay_match = None, None, None
-            for b in st.session_state.bookings:
-                if b.get("unit") == check_unit and b.get("status") not in ["Checked-Out", "Cancelled"]:
-                    b_in = pd.to_datetime(b.get("checkin", ""), format='%d/%m/%Y', errors='coerce')
-                    b_out = pd.to_datetime(b.get("checkout", ""), format='%d/%m/%Y', errors='coerce')
-                    if pd.notnull(b_in) and pd.notnull(b_out):
-                        if b_out == target_dt: checkout_match = b
-                        if b_in == target_dt: checkin_match = b
-                        if b_in < target_dt < b_out: active_stay_match = b
-
-            if checkout_match or checkin_match or active_stay_match:
-                status_msg = f"📅 **Status Breakdown for {check_unit} on {target_date_str}:**\n\n"
-                if checkout_match: status_msg += f"📤 **Checkout:** {checkout_match.get('name', 'N/A')}\n\n"
-                if checkin_match: status_msg += f"📥 **Check-In:** {checkin_match.get('name', 'N/A')}\n"
-                if active_stay_match: status_msg += f"🔴 **Fully Occupied:** {active_stay_match.get('name', 'N/A')}\n"
-                st.warning(status_msg)
+            active_match = next((b for b in st.session_state.bookings if b.get("unit") == check_unit and b.get("status") not in ["Checked-Out", "Cancelled"] and pd.to_datetime(b.get("checkin"), format='%d/%m/%Y', errors='coerce') <= target_dt <= pd.to_datetime(b.get("checkout"), format='%d/%m/%Y', errors='coerce')), None)
+            if active_match:
+                st.warning(f"🔴 **{check_unit}** is occupied by **{active_match.get('name')}** (ID: {active_match.get('id')}).")
             else:
-                st.success(f"🟢 **{check_unit}** is **COMPLETELY AVAILABLE** on {target_date_str}!")
-
-    st.markdown("---")
-    st.markdown(f"<h4 style='color: #f97316;'>📅 Full Resort Status Overview for Date: {check_date.strftime('%d/%m/%Y')}</h4>", unsafe_allow_html=True)
-    
-    overview_data = []
-    target_dt = pd.to_datetime(check_date)
-    for unit in st.session_state.units:
-        hk_status = st.session_state.housekeeping.get(unit, "Clean")
-        if hk_status == "Maintenance":
-            status_text, client_info = "🛠️ UNAVAILABLE - Under Maintenance", "Housekeeping Block"
-        elif hk_status == "Dirty":
-            status_text, client_info = "🟠 Turnaround Required (Dirty)", "Cleaning Pending"
-        else:
-            status_text, client_info = "🟢 Available All Day", "None"
-            full_match = next((b for b in st.session_state.bookings if b.get("unit") == unit and b.get("status") not in ["Checked-Out", "Cancelled"] and pd.to_datetime(b.get("checkin"), format='%d/%m/%Y', errors='coerce') <= target_dt <= pd.to_datetime(b.get("checkout"), format='%d/%m/%Y', errors='coerce')), None)
-            if full_match:
-                status_text, client_info = "🔴 Booked (Occupied)", f"{full_match.get('name', 'N/A')}"
-                
-        overview_data.append({"Cottage / Unit": unit, "Housekeeping": hk_status, "Status": status_text, "Client Details": client_info})
-    st.dataframe(pd.DataFrame(overview_data), use_container_width=True, hide_index=True)
+                st.success(f"🟢 **{check_unit}** is **AVAILABLE** on {check_date.strftime('%d/%m/%Y')}!")
 
 # 3. DAY VISITORS & RESTAURANT TAB
 with get_tab("🍽️ Day Visitors & Restaurant"):
-    st.markdown("<h3 style='color: #f97316;'>🍽️ Day Visitors & Restaurant Management</h3>", unsafe_allow_html=True)
-    st.info("Manage walk-in restaurant guests and day visitors here.")
+    st.markdown("<h3 style='color: #f97316;'>🍽️ Day Visitors & Restaurant Services</h3>", unsafe_allow_html=True)
+    st.info("Manage walk-in visitors, dining orders, and cafe transactions here.")
+    if st.session_state.visitors:
+        v_rows = [{"ID": v.get("id"), "Name": v.get("name"), "Phone": v.get("phone"), "Type": v.get("v_type"), "Food Bill": f"Rs. {v.get('food_bill', 0):,}"} for v in st.session_state.visitors]
+        st.dataframe(pd.DataFrame(v_rows), use_container_width=True, hide_index=True)
+    else:
+        st.info("No day visitor records found.")
 
 # 4. HOUSEKEEPING TAB
 with get_tab("🧹 Housekeeping"):
@@ -850,7 +753,6 @@ with get_tab("🧹 Housekeeping"):
     for idx, unit in enumerate(st.session_state.units):
         curr_status = st.session_state.housekeeping.get(unit, "Clean")
         status_color = "#16a34a" if curr_status == "Clean" else "#dc2626" if curr_status == "Maintenance" else "#ea580c"
-        
         with hk_cols[idx % 3]:
             st.markdown(f"""
             <div style='background: #1a1c29; padding: 15px; border-radius: 8px; border-left: 5px solid {status_color}; margin-bottom: 15px;'>
@@ -858,7 +760,6 @@ with get_tab("🧹 Housekeeping"):
                 <span style='font-size: 12px; color: {status_color}; font-weight: 700;'>Status: {curr_status}</span>
             </div>
             """, unsafe_allow_html=True)
-            
             new_hk_status = st.selectbox(f"Update {unit}", ["Clean", "Dirty", "Maintenance"], index=["Clean", "Dirty", "Maintenance"].index(curr_status), key=f"hk_sel_{idx}")
             if new_hk_status != curr_status:
                 st.session_state.housekeeping[unit] = new_hk_status
@@ -868,51 +769,34 @@ with get_tab("🧹 Housekeeping"):
 # 5. INVOICE GENERATOR TAB
 with get_tab("🧾 Invoice Generator"):
     st.markdown("<h3 style='color: #f97316;'>🧾 Executive Invoice Generator</h3>", unsafe_allow_html=True)
-    booking_inv_options = [f"{b.get('id', 'HCC-1001')} - {b.get('name', 'Guest')}" for b in st.session_state.bookings if isinstance(b, dict)]
-    if booking_inv_options:
-        sel_inv_raw = st.selectbox("Select Booking for Invoice", options=["-- Select --"] + booking_inv_options)
+    all_inv_options = [f"{b.get('id')} - {b.get('name')}" for b in st.session_state.bookings] + [f"{v.get('id')} - {v.get('name')}" for v in st.session_state.visitors]
+    if all_inv_options:
+        sel_inv_raw = st.selectbox("Select Record ID for Invoice", options=["-- Select --"] + all_inv_options)
         if sel_inv_raw != "-- Select --":
-            sel_id = sel_inv_raw.split(" - ")[0]
-            b_data = next((b for b in st.session_state.bookings if str(b.get('id')) == sel_id), None)
-            if b_data:
-                rent = int(b_data.get('rent', 0)) if str(b_data.get('rent', 0)).isdigit() else 0
-                st.markdown(f"""
-                <div class='invoice-box'>
-                    <h2>HOLIDAY COUNTRY CLUB</h2>
-                    <p><b>Booking ID:</b> {b_data.get('id')}</p>
-                    <p><b>Guest Name:</b> {b_data.get('name')}</p>
-                    <p><b>Email:</b> {b_data.get('email', 'N/A')} | <b>Phone:</b> {b_data.get('phone')}</p>
-                    <p><b>CNIC/Passport:</b> {b_data.get('cnic_passport', 'N/A')} | <b>Address:</b> {b_data.get('address', 'N/A')}</p>
-                    <p><b>Cottage:</b> {b_data.get('unit')} ({b_data.get('checkin')} to {b_data.get('checkout')})</p>
-                    <p><b>Special Requests:</b> {b_data.get('special_requests', 'None')}</p>
-                    <hr>
-                    <h3>Total Rent: Rs. {rent:,}</h3>
-                </div>
-                """, unsafe_allow_html=True)
+            st.success(f"Selected Invoice Reference: {sel_inv_raw.split(' - ')[0]}")
+    else:
+        st.info("No records available.")
 
 # 6. ACCOUNTS & EXPENSES TAB
 if role in MANAGEMENT_ACCESS or role == "Auditor":
     with get_tab("💰 Accounts & Expenses"):
         st.markdown("<h3 style='color: #f97316;'>💰 Expense Tracking & Financial Audits</h3>", unsafe_allow_html=True)
         if st.session_state.expenses:
-            st.dataframe(pd.DataFrame(st.session_state.expenses), use_container_width=True)
+            exp_df = pd.DataFrame(st.session_state.expenses)
+            st.dataframe(exp_df, use_container_width=True, hide_index=True)
         else:
-            st.info("No expenses recorded yet.")
+            st.info("No expenses recorded.")
 
 # 7. SETUP & ADMIN CONTROLS TAB
 if role in FULL_ACCESS:
     with get_tab("⚙️ Setup & Admin Controls"):
         st.markdown("<h3 style='color: #f97316;'>⚙️ Resort Setup & Inventory Management</h3>", unsafe_allow_html=True)
-        st.write(f"Current Cottages in Inventory: {len(st.session_state.units)}")
+        st.write(f"Total Configured Cottages/Units: {len(st.session_state.units)}")
 
 # --- FOOTER ---
 st.markdown("""
 <div class='decent-footer'>
-    <div style='margin-bottom: 5px;'>
-        © 2026 <strong>Holiday Country Club | Executive Portal</strong>. All Rights Reserved.
-    </div>
-    <div style='font-size: 12px; color: #64748b;'>
-        Designed, Engineered & Maintained with Precision by <span class='dev-name'>M. Arif Aziz</span>
-    </div>
+    <div>© 2026 <strong>Holiday Country Club | Executive Portal</strong>. All Rights Reserved.</div>
+    <div style='font-size: 12px; color: #64748b;'>Engineered & Maintained with Precision by <span class='dev-name'>M. Arif Aziz</span></div>
 </div>
 """, unsafe_allow_html=True)

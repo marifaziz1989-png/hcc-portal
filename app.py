@@ -622,10 +622,9 @@ with get_tab("🏨 Stay Bookings"):
                             save_data()
         try:
             for b in st.session_state.bookings:
-            supabase.table("booking").upsert({"id": b.get("id"), "data": b}).execute()
+                    supabase.table("booking").upsert({"id": b.get("id"), "data": b}).execute()
         except Exception as e:
-        st.warning("⚠️ Internet connection unstable or offline. Changes saved locally, will sync when online.")
-    if st.session_state.bookings:
+            st.warning("⚠️ Internet connection unstable or offline. Changes saved locally, will sync when online.")
         st.markdown("### 📋 Active Bookings Directory & Management")
         
         booking_options = ["-- Select --"] + [f"{b.get('id', 'N/A')} - {b.get('name', 'Guest')}" for b in st.session_state.bookings]

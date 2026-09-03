@@ -1,14 +1,15 @@
-import streamlit as st
+import streamlit as str_lit
 from supabase import create_client, Client
 
 # Supabase Credentials
 try:
-    url = st.secrets["SUPABASE_URL"]
-    key = st.secrets["SUPABASE_KEY"]
+    url = str_lit.secrets["SUPABASE_URL"]
+    key = str_lit.secrets["SUPABASE_KEY"]
     supabase: Client = create_client(url, key)
 except Exception:
     supabase = None
 
+import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 import json
@@ -167,10 +168,6 @@ def load_data():
                 del_v = data.get("deleted_visitors", [])
                 safe_del_v = [item for item in del_v if isinstance(item, dict) and "record" in item]
                 
-                del_units = data.get("deleted_units", [])
-                del_menu = data.get("deleted_menu", [])
-                del_services = data.get("deleted_services", [])
-
                 return (
                     data.get("units", default_units), 
                     data.get("bookings", []), 
@@ -181,9 +178,9 @@ def load_data():
                     data.get("housekeeping", {u: "Clean" for u in data.get("units", default_units)}),
                     safe_del_b,
                     safe_del_v,
-                    del_units,
-                    del_menu,
-                    del_services
+                    data.get("deleted_units", []),
+                    data.get("deleted_menu", []),
+                    data.get("deleted_services", [])
                 )
         except Exception:
             pass
@@ -649,7 +646,6 @@ with get_tab("🏨 Stay Bookings"):
                         status_idx = status_list.index(current_status) if current_status in status_list else 2
                         new_status = uc_col2.selectbox("Update Status", status_list, index=status_idx)
                         
-                        # Dates
                         default_in = pd.to_datetime(target_b.get('checkin', ''), format='%d/%m/%Y', errors='coerce')
                         if pd.isnull(default_in): default_in = datetime.today()
                         default_out = pd.to_datetime(target_b.get('checkout', ''), format='%d/%m/%Y', errors='coerce')
@@ -733,7 +729,6 @@ with get_tab("🏨 Stay Bookings"):
                 rc1.markdown(f"**{b.get('id')}** — {b.get('name')} | **Unit:** {b.get('unit')} | **CNIC:** {b.get('cnic', 'N/A')} | **Total:** Rs. {grand:,} ({b.get('status')})")
                 rc2.markdown(f"In: {b.get('checkin')} | Out: {b.get('checkout')}")
                 
-                # Direct delete button per row
                 if rc3.button("🗑️ Delete", key=f"del_book_row_{b.get('id')}_{idx}"):
                     removed = st.session_state.bookings.pop(idx)
                     st.session_state.deleted_bookings.insert(0, {"record": removed, "index": idx})

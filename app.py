@@ -1,4 +1,4 @@
-import streamlit as st
+[cite: 1]import streamlit as st
 from supabase import create_client, Client
 
 # Supabase Credentials
@@ -553,6 +553,7 @@ with get_tab("🏨 Stay Bookings"):
                 unit = colA.selectbox("Assign Cottage", options=st.session_state.units)
                 status = colB.selectbox("Status", ["Reserved", "Booked", "Occupied", "Checked-Out", "Cancelled"])
                 
+                # Check-in aur Check-out dates ab aik hi line mein hain
                 c_in_date = colA.date_input("Check-in Date", datetime.today())
                 c_out_date = colB.date_input("Check-out Date", datetime.today() + timedelta(days=1))
                 

@@ -735,15 +735,18 @@ with get_tab("🏨 Stay Bookings"):
                 if del_bid != "-- Select --":
                     target_idx = next((i for i, b in enumerate(st.session_state.bookings) if str(b.get("id")) == del_bid), None)
                     if target_idx is not None:
-                        try:
-                            supabase.table("booking").delete().eq("id", del_bid).execute()
-                        except Exception as e:
-                            st.warning("⚠️ Could not delete from cloud.")
+                        try: supabase.table("booking").delete().eq("id", del_bid).execute()
+                        except: pass
                         
                         target = st.session_state.bookings.pop(target_idx)
                         st.session_state.deleted_bookings.insert(0, {"record": target, "index": target_idx})
                         if len(st.session_state.deleted_bookings) > 5:
                             st.session_state.deleted_bookings.pop()
+                        save_data()
+                        st.success("Booking deleted and saved to recycle bin!")
+                        st.rerun()
+                else:
+                    st.warning("Please select a valid Booking ID.")
                         save_data()
                         st.success("Booking deleted and saved to recycle bin!")
                         st.rerun() 

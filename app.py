@@ -337,7 +337,7 @@ st.markdown(f"""
 <div style="display: flex; align-items: center; gap: 12px;">
 {logo_html}
 <div style="text-align: left;">
-<h1 style="color: white; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; line-height: 1.1;">Holiday Country Club</h1>
+<h1 style="color: white; margin: 0; font-size: 20px; font-weight: 1300; letter-spacing: 0.5px; line-height: 1.1;">WELCOME</h1>
 <p style="color: #f97316; margin: 2px 0 0 0; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">Executive Portal</p>
 </div>
 </div>
@@ -378,7 +378,7 @@ st.markdown(f"""
 </div>
 </div>
 <div style="margin-top: 8px; border-top: 1px solid rgba(249, 115, 22, 0.2); padding-top: 6px;">
-<marquee behavior="scroll" direction="left" scrollamount="4" style="color: #f97316; font-size: 11px; font-weight: 600; letter-spacing: 0.5px;">
+<marquee behavior="scroll" direction="left" scrollamount="4" style="color: #fff; font-size: 11px; font-weight: 600; letter-spacing: 0.5px;">
 🌟 Welcome to Holiday Country Club (HCC) Executive Portal — Managing Excellence in Murree Hills | Real-Time Operations & Financial Tracking 🌟
 </marquee>
 </div>

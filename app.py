@@ -316,7 +316,74 @@ if not st.session_state.logged_in:
 
 role = st.session_state.role
 
+# --- CORPORATE HEADER BAR (FINAL CLEAN HTML) ---
+logo_html = ""
+logo_path = "HCC Logo white.png"
+if os.path.exists(logo_path):
+    with open(logo_path, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read()).decode()
+        logo_html = f'<img src="data:image/png;base64,{encoded_string}" style="height: 65px; width: 120px; object-fit: contain;">'
+else:
+    logo_html = '<span style="font-size: 24px;">🏢</span>'
 
+current_hour = datetime.now().hour
+is_night = current_hour < 6 or current_hour > 18
+weather_icon = "🌙" if is_night else "☀️"
+weather_cond = "Clear Night" if is_night else "Clear & Pleasant"
+
+st.markdown(f"""
+<div style="background: linear-gradient(135deg, rgba(18, 20, 30, 0.95), rgba(26, 31, 44, 0.95)); border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 12px; padding: 12px 18px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); backdrop-filter: blur(12px);">
+<div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 12px;">
+<div style="display: flex; align-items: center; gap: 12px;">
+{logo_html}
+<div style="text-align: left;">
+<h1 style="color: white; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; line-height: 1.1;">Holiday Country Club</h1>
+<p style="color: #f97316; margin: 2px 0 0 0; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">Executive Portal</p>
+</div>
+</div>
+<div style="display: flex; gap: 6px; align-items: center;">
+<div style="background: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 6px; padding: 4px 8px; text-align: center; min-width: 70px;">
+<div style="font-size: 9px; color: #94a3b8; font-weight: 600;">Today</div>
+<div style="font-size: 14px; margin: 1px 0;">🌙</div>
+<div style="font-size: 10px; color: #fff; font-weight: 700;">19°/12°</div>
+</div>
+<div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 4px 8px; text-align: center; min-width: 70px;">
+<div style="font-size: 9px; color: #94a3b8; font-weight: 600;">Mon 07</div>
+<div style="font-size: 14px; margin: 1px 0;">☀️</div>
+<div style="font-size: 10px; color: #fff; font-weight: 700;">20°/13°</div>
+</div>
+<div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 4px 8px; text-align: center; min-width: 70px;">
+<div style="font-size: 9px; color: #94a3b8; font-weight: 600;">Tue 08</div>
+<div style="font-size: 14px; margin: 1px 0;">⛅</div>
+<div style="font-size: 10px; color: #fff; font-weight: 700;">19°/12°</div>
+</div>
+<div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 4px 8px; text-align: center; min-width: 70px;">
+<div style="font-size: 9px; color: #94a3b8; font-weight: 600;">Wed 09</div>
+<div style="font-size: 14px; margin: 1px 0;">🌦️</div>
+<div style="font-size: 10px; color: #fff; font-weight: 700;">18°/11°</div>
+</div>
+<div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 4px 8px; text-align: center; min-width: 70px;">
+<div style="font-size: 9px; color: #94a3b8; font-weight: 600;">Thu 10</div>
+<div style="font-size: 14px; margin: 1px 0;">☀️</div>
+<div style="font-size: 10px; color: #fff; font-weight: 700;">21°/13°</div>
+</div>
+</div>
+<div style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 8px 14px; display: flex; align-items: center; gap: 12px; backdrop-filter: blur(10px);">
+<div style="font-size: 32px; line-height: 1;">{weather_icon}</div>
+<div style="text-align: left;">
+<div style="font-size: 14px; font-weight: 800; color: #ffffff;">Murree Hills: <span style="color: #38bdf8;">19.3°C</span></div>
+<div style="font-size: 11px; color: #f97316; font-weight: 600;">{weather_cond}</div>
+<div style="font-size: 10px; color: #94a3b8; font-weight: 500;">🕒 {(datetime.now()).strftime('%d %b %Y | %I:%M %p')}</div>
+</div>
+</div>
+</div>
+<div style="margin-top: 8px; border-top: 1px solid rgba(249, 115, 22, 0.2); padding-top: 6px;">
+<marquee behavior="scroll" direction="left" scrollamount="4" style="color: #f97316; font-size: 11px; font-weight: 600; letter-spacing: 0.5px;">
+🌟 Welcome to Holiday Country Club (HCC) Executive Portal — Managing Excellence in Murree Hills | Real-Time Operations & Financial Tracking 🌟
+</marquee>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
 # --- SIDEBAR ---
 with st.sidebar:
@@ -334,25 +401,26 @@ with st.sidebar:
 </div>
 """, unsafe_allow_html=True)
 
-    # --- PREPARING PENDING TASKS & TODAY CHECK-OUTS DATA ---
-    pending_tasks_list = []
-    for u, status in st.session_state.housekeeping.items():
-        if status == "Maintenance":
-            pending_tasks_list.append(f"🛠️ {u}: Under Maintenance.")
-        elif status == "Dirty":
-            pending_tasks_list.append(f"🧹 {u}: Cleaning Required.")
+# --- PREPARING PENDING TASKS & TODAY CHECK-OUTS DATA ---
 
-    if not pending_tasks_list:
-        pending_tasks_list.append("🟢 All cottages are clean and fully operational.")
+pending_tasks_list = []
+for u, status in st.session_state.housekeeping.items():
+    if status == "Maintenance":
+        pending_tasks_list.append(f"🛠️ {u}: Under Maintenance.")
+    elif status == "Dirty":
+        pending_tasks_list.append(f"🧹 {u}: Cleaning Required.")
 
-    today_str = datetime.today().strftime('%d/%m/%Y')
-    today_checkouts_list = []
-    for b in st.session_state.bookings:
-        if b.get('checkout') == today_str and b.get('status') != 'Cancelled':
-            today_checkouts_list.append(f"📤 {b.get('unit').split('-')[0]}: {b.get('name')}")
+if not pending_tasks_list:
+    pending_tasks_list.append("🟢 All cottages are clean and fully operational.")
 
-    if not today_checkouts_list:
-        today_checkouts_list.append(f"📅 No check-outs for today ({today_str}).")
+today_str = datetime.today().strftime('%d/%m/%Y')
+today_checkouts_list = []
+for b in st.session_state.bookings:
+    if b.get('checkout') == today_str and b.get('status') != 'Cancelled':
+        today_checkouts_list.append(f"📤 {b.get('unit').split('-')[0]}: {b.get('name')}")
+
+if not today_checkouts_list:
+    today_checkouts_list.append(f"📅 No check-outs for today ({today_str}).")
 
 # --- DYNAMIC 5-SECOND FLIP PANELS SECTION WITH 3x2 GRID & BLINKING HEADINGS ---
 panels_html = f"""

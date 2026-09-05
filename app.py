@@ -1,3 +1,5 @@
+import base64
+import os
 import streamlit as st
 from supabase import create_client, Client
 import pandas as pd
@@ -122,11 +124,11 @@ st.markdown("""
 
 def render_metric(title, value, bg_color):
     st.markdown(f"""
-    <div class='metric-card' style='background-color: {bg_color};'>
-        <div class='metric-title'>{title}</div>
-        <div class='metric-value'>{value}</div>
-    </div>
-    """, unsafe_allow_html=True)
+        <div class='metric-card' style='background-color: {bg_color};'>
+            <div class='metric-title'>{title}</div>
+            <div class='metric-value'>{value}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # --- SAFE DATABASE HANDLING ---
 DATA_FILE = "hcc_database.json"
@@ -314,27 +316,9 @@ if not st.session_state.logged_in:
 
 role = st.session_state.role
 
-# --- CORPORATE HEADER BAR ---
-st.markdown(f"""
-<div class='dark-header'>
-    <div style='display: flex; align-items: center; gap: 15px;'>
-        <div style='background: #12141e; padding: 6px; border-radius: 8px; border: 1px solid #f97316; display: flex; align-items: center; justify-content: center;'>
-            <span style='font-size: 24px;'>🏔️</span>
-        </div>
-        <div>
-            <p class='dark-title'>HOLIDAY COUNTRY CLUB | Executive Portal</p>
-            <span style='font-size: 12px; color: #f97316; font-weight: 600;'>Logged in as: {st.session_state.name} ({role})</span>
-        </div>
-    </div>
-    <div>
-        <div class='weather-badge'>
-            <b>🌤️ Murree Hills Weather:</b> 19.3°C (Clear)<br>
-            <span style='font-size: 11px; opacity: 0.9;'>📅 {datetime.now().strftime('%A, %d %B %Y | %I:%M %p')}</span>
-        </div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
 
+
+# --- SIDEBAR ---
 with st.sidebar:
     if st.button("🚪 Logout", use_container_width=True):
         st.session_state.logged_in = False
@@ -342,33 +326,33 @@ with st.sidebar:
 
     st.markdown("<br><hr style='border: 0.5px solid #334155;'><br>", unsafe_allow_html=True)
     st.markdown("""
-    <div style='background: rgba(30, 41, 59, 0.5); padding: 15px; border-radius: 8px; border: 1px solid #334155; text-align: center;'>
-        <p style='color: #94a3b8; font-size: 11px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;'>System Architecture</p>
-        <p style='color: #e2e8f0; font-size: 13px; font-weight: 700; margin-bottom: 2px;'>Designed & Developed By</p>
-        <p style='color: #f97316; font-size: 14px; font-weight: 800; margin-bottom: 10px;'>M. Arif Aziz</p>
-        <p style='color: #64748b; font-size: 10px; margin: 0;'>© 2026 Holiday Country Club<br>All Rights Reserved</p>
-    </div>
-    """, unsafe_allow_html=True)
+<div style='background: rgba(30, 41, 59, 0.5); padding: 15px; border-radius: 8px; border: 1px solid #334155; text-align: center;'>
+    <p style='color: #94a3b8; font-size: 11px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;'>System Architecture</p>
+    <p style='color: #e2e8f0; font-size: 13px; font-weight: 700; margin-bottom: 2px;'>Designed & Developed By</p>
+    <p style='color: #f97316; font-size: 14px; font-weight: 800; margin-bottom: 10px;'>M. Arif Aziz</p>
+    <p style='color: #64748b; font-size: 10px; margin: 0;'>© 2026 Holiday Country Club<br>All Rights Reserved</p>
+</div>
+""", unsafe_allow_html=True)
 
-# --- PREPARING PENDING TASKS & TODAY CHECK-OUTS DATA ---
-pending_tasks_list = []
-for u, status in st.session_state.housekeeping.items():
-    if status == "Maintenance":
-        pending_tasks_list.append(f"🛠️ {u}: Under Maintenance.")
-    elif status == "Dirty":
-        pending_tasks_list.append(f"🧹 {u}: Cleaning Required.")
+    # --- PREPARING PENDING TASKS & TODAY CHECK-OUTS DATA ---
+    pending_tasks_list = []
+    for u, status in st.session_state.housekeeping.items():
+        if status == "Maintenance":
+            pending_tasks_list.append(f"🛠️ {u}: Under Maintenance.")
+        elif status == "Dirty":
+            pending_tasks_list.append(f"🧹 {u}: Cleaning Required.")
 
-if not pending_tasks_list:
-    pending_tasks_list.append("🟢 All cottages are clean and fully operational.")
+    if not pending_tasks_list:
+        pending_tasks_list.append("🟢 All cottages are clean and fully operational.")
 
-today_str = datetime.today().strftime('%d/%m/%Y')
-today_checkouts_list = []
-for b in st.session_state.bookings:
-    if b.get('checkout') == today_str and b.get('status') != 'Cancelled':
-        today_checkouts_list.append(f"📤 {b.get('unit').split('-')[0]}: {b.get('name')}")
+    today_str = datetime.today().strftime('%d/%m/%Y')
+    today_checkouts_list = []
+    for b in st.session_state.bookings:
+        if b.get('checkout') == today_str and b.get('status') != 'Cancelled':
+            today_checkouts_list.append(f"📤 {b.get('unit').split('-')[0]}: {b.get('name')}")
 
-if not today_checkouts_list:
-    today_checkouts_list.append(f"📅 No check-outs for today ({today_str}).")
+    if not today_checkouts_list:
+        today_checkouts_list.append(f"📅 No check-outs for today ({today_str}).")
 
 # --- DYNAMIC 5-SECOND FLIP PANELS SECTION WITH 3x2 GRID & BLINKING HEADINGS ---
 panels_html = f"""
@@ -457,25 +441,57 @@ if role in MANAGEMENT_ACCESS or role == "Auditor":
     occupied = sum(1 for b in st.session_state.bookings if b.get("status") == "Occupied")
     upcoming = sum(1 for b in st.session_state.bookings if b.get("status") == "Booked")
     reserved = sum(1 for b in st.session_state.bookings if b.get("status") == "Reserved")
-    available = max(0, total_units - (occupied + upcoming + reserved))
+    
+    # آج کے دن (Today) کے لحاظ سے فعال یونٹس کا حساب تاکہ صرف آج کے حقیقی دستیاب یونٹس آئیں
+    today_dt = pd.Timestamp.today().normalize()
+    blocked_units_today = set()
+    for b in st.session_state.bookings:
+        if b.get("status") in ["Occupied", "Booked", "Reserved"]:
+            cin = pd.to_datetime(b.get("checkin", ""), format='%d/%m/%Y', errors='coerce')
+            cout = pd.to_datetime(b.get("checkout", ""), format='%d/%m/%Y', errors='coerce')
+            if pd.notnull(cin) and pd.notnull(cout):
+                if cin.normalize() <= today_dt < cout.normalize():
+                    u = b.get("unit")
+                    if u:
+                        blocked_units_today.add(u)
+                        
+    available = max(0, total_units - len(blocked_units_today))
     
     gross_revenue, paid_rent, paid_food, paid_act, total_comp = 0, 0, 0, 0, 0
     for b in st.session_state.bookings:
         r = int(b.get("rent", 0)) if str(b.get("rent", 0)).isdigit() else 0
-        f = int(b.get("food", 0)) if str(b.get("food", 0)).isdigit() else 0
-        a = int(b.get("activities_total", 0)) if str(b.get("activities_total", 0)).isdigit() else 0
+        stay_type = b.get("staytype", "Paid Regular")
         
-        if b.get("staytype") == "Complimentary":
-            total_comp += (r + f + a)
+        # 1. Cottage / Unit Rent Check: اگر پوری کاٹیج کمپلیمنٹری ہے تو رینٹ کمپلیمنٹری میں جائے گا، ورنہ پیڈ رینٹ میں
+        if stay_type == "Complimentary":
+            total_comp += r
         else:
             paid_rent += r
-            paid_food += f
-            paid_act += a
+        
+        # 2. Food Items Individual Check: ہر فوڈ آئٹم کی اپنی کمپلیمنٹری یا پیڈ حالت چیک ہوگی
+        for f_item in b.get('food_items', []):
+            if isinstance(f_item, dict):
+                f_price = int(f_item.get('price', 0)) if str(f_item.get('price', 0)).isdigit() else 0
+                if f_item.get('comp', False) or stay_type == "Complimentary":
+                    total_comp += f_price
+                else:
+                    paid_food += f_price
+
+        # 3. Activities & Services Individual Check: ہر سروس کی اپنی کمپلیمنٹری یا پیڈ حالت چیک ہوگی
+        for act in b.get('activities', []):
+            if isinstance(act, dict):
+                a_price = int(act.get('price', 0)) if str(act.get('price', 0)).isdigit() else 0
+                if act.get('comp', False) or stay_type == "Complimentary":
+                    total_comp += a_price
+                else:
+                    paid_act += a_price
 
     for v in st.session_state.visitors:
         vf = int(v.get("food_bill", 0)) if str(v.get("food_bill", 0)).isdigit() else 0
         va = int(v.get("activities_total", 0)) if str(v.get("activities_total", 0)).isdigit() else 0
-        if v.get("v_type") == "Complimentary":
+        v_type = v.get("v_type", "Paid")
+        
+        if v_type == "Complimentary":
             total_comp += (vf + va)
         else:
             paid_food += vf
@@ -510,7 +526,7 @@ tabs = st.tabs(tab_titles)
 def get_tab(name):
     return tabs[tab_titles.index(name)] if name in tab_titles else None
 
-# 1. STAY BOOKINGS TAB
+## STAY BOOKINGS TAB
 with get_tab("🏨 Stay Bookings"):
     st.markdown("<h3 style='color: #f97316;'>🚀 Upcoming Bookings Quick-Tracking Panel</h3>", unsafe_allow_html=True)
     upcoming_list = [b for b in st.session_state.bookings if b.get("status") in ["Booked", "Reserved"]]
@@ -548,11 +564,16 @@ with get_tab("🏨 Stay Bookings"):
                 except:
                     pass
         next_id_num = max(existing_nums) + 1 if existing_nums else 1001
+        
+        # --- एडिशन 1: फॉर्म रिसेट और नई यूनिक आईडी को मेमरी स्टेट के जरिए कंट्रोल करना ---
+        if "form_reset_trigger" not in st.session_state:
+            st.session_state.form_reset_trigger = 0
+
         auto_b_id = f"HCC-{next_id_num}"
 
         with st.expander("➕ Create New Stay Booking", expanded=False):
             st.markdown("Please fill out the form below to secure your reservation.")
-            with st.form("resort_booking_form"):
+            with st.form(f"resort_booking_form_{st.session_state.form_reset_trigger}"):
                 b_id = st.text_input("Booking ID (Sequential Unique)", value=auto_b_id)
                 
                 # 1. Guest Personal Information
@@ -594,12 +615,13 @@ with get_tab("🏨 Stay Bookings"):
                             "W02 - A-Frame Studio Woody Cottage",
                             "W03 - A-Frame Studio Woody Cottage",
                             "W04 - A-Frame Studio Woody Cottage",
-                            "TH-01 - HCC Signature Tree House"
+                            "TH-01 - HCC Signature Tree House",
+                           
                         ]
                     )
                 with col6:
                     units = st.number_input("Number of Units", min_value=1, value=1, step=1)
-                    bedding = st.selectbox("Bedding Preference", ["Double Bed", "Twin Beds"])
+                    bedding = st.selectbox("Bedding Preference", ["Studio", "Single Bed", "Double Bed", "Three Beds", "No Preference"])
 
                 st.markdown("---")
                 
@@ -608,7 +630,7 @@ with get_tab("🏨 Stay Bookings"):
                 special_requests = st.text_area("Special Requests (e.g., food allergies, honeymoon setup)")
                 addons = st.multiselect(
                     "Add-on Services",
-                    ["Airport/City Transfer", "Jacuzzi Access", "BBQ Arrangement", "Guided Resort Tour"]
+                    ["Airport/City Transfer", "Jacuzzi Access", "BBQ Arrangement", "Guided Resort Tour", "Pick and Drop"]
                 )
 
                 st.markdown("---")
@@ -694,13 +716,17 @@ with get_tab("🏨 Stay Bookings"):
                             st.error(f"❌ Conflict Error: Cottage '{room_category}' is booked during these dates!")
                         else:
                             new_rent_val = rent if rent.isdigit() else str(advance_amount)
+                            # ریاضیاتی الائنمنٹ: Due Amount کا حساب کتاب
+                            parsed_rent = float(new_rent_val) if str(new_rent_val).replace('.','',1).isdigit() else 0.0
+                            calculated_due_amount = parsed_rent - float(advance_amount)
+
                             new_booking_dict = {
                                 "id": b_id, "name": full_name, "phone": contact, "email": email,
                                 "address": address, "cnic_passport": cnic_passport, "unit": room_category,
                                 "checkin": check_in.strftime('%d/%m/%Y'), "checkout": check_out.strftime('%d/%m/%Y'),
                                 "adults": adults, "children": children, "units_booked": units, "bedding": bedding,
                                 "special_requests": special_requests, "addons": addons, "payment_method": payment_method,
-                                "advance_amount": advance_amount, "status": status, "staytype": staytype, "rent": new_rent_val,
+                                "advance_amount": advance_amount, "due_amount": calculated_due_amount, "status": status, "staytype": staytype, "rent": new_rent_val,
                                 "food": menu_total, "food_items": menu_items_ordered, "activities": selected_act, "activities_total": act_total
                             }
                             st.session_state.bookings.append(new_booking_dict)
@@ -712,6 +738,9 @@ with get_tab("🏨 Stay Bookings"):
                                 except Exception:
                                     pass
                             st.success("Booking submitted successfully!")
+                            # فارم ری سیٹ کرنے کے لیے ٹ্রিگر ویلیو کو اپڈیٹ کر دیں تاکہ فارم کے خانے خالی ہو جائیں
+                            st.session_state.form_reset_trigger += 1
+                            st.rerun()
 
         if supabase:
             try:
@@ -731,8 +760,22 @@ with get_tab("🏨 Stay Bookings"):
                 target_b = next((b for b in st.session_state.bookings if str(b.get("id")) == edit_b_sel), None)
                 
                 if target_b:
+                    # --- एडिशन 2: एडमिनिस्ट्रेटिव कंट्रोल / एडिट अपडेट के लिए तमाम पुराना डेटा और फील्ड्स ری اوپن ہونا ---
                     with st.form("update_booking_form"):
                         st.markdown(f"**Editing Booking:** {target_b.get('id', 'N/A')} - **Guest:** {target_b.get('name', 'N/A')} ({target_b.get('unit', 'N/A')})")
+                        
+                        # کلیریکل مسٹیکس یا ایڈٹ کے لیے بنیادی فیلڈز کو بھی ری اوپن اور ایڈٹ کے قابل بنانا
+                        uc_col01, uc_col02 = st.columns(2)
+                        with uc_col01:
+                            edit_full_name = st.text_input("Edit Full Name", value=str(target_b.get('name', '')))
+                            edit_contact = st.text_input("Edit Mobile / WhatsApp", value=str(target_b.get('phone', '')))
+                            edit_email = st.text_input("Edit Email Address", value=str(target_b.get('email', '')))
+                        with uc_col02:
+                            edit_address = st.text_input("Edit City / Address", value=str(target_b.get('address', '')))
+                            edit_cnic = st.text_input("Edit CNIC / Passport", value=str(target_b.get('cnic_passport', '')))
+                            edit_advance = st.number_input("Edit Advance Paid (PKR)", min_value=0, value=int(target_b.get('advance_amount', 0)), step=1000)
+
+                        st.markdown("---")
                         uc_col1, uc_col2 = st.columns(2)
                         current_status = target_b.get('status', 'Reserved')
                         status_list = ["Reserved", "Booked", "Occupied", "Checked-Out", "Cancelled"]
@@ -784,9 +827,22 @@ with get_tab("🏨 Stay Bookings"):
                             new_food_total = sum(item['price'] for item in added_f_items if not item.get('comp', False))
                             new_act_total = sum(item['price'] for item in added_act_items if not item.get('comp', False))
                             
+                            # کلیریکل مسٹیکس اپڈیٹ کرنا
+                            target_b['name'] = edit_full_name
+                            target_b['phone'] = edit_contact
+                            target_b['email'] = edit_email
+                            target_b['address'] = edit_address
+                            target_b['cnic_passport'] = edit_cnic
+                            target_b['advance_amount'] = edit_advance
+
                             target_b['status'] = new_status
                             target_b['staytype'] = new_staytype
                             target_b['rent'] = new_rent
+                            
+                            # بقیہ رقم (Due Amount) کی دوبارہ درست کیلکولیشن اپڈیٹ کے دوران
+                            parsed_updated_rent = float(new_rent) if str(new_rent).replace('.','',1).isdigit() else 0.0
+                            target_b['due_amount'] = parsed_updated_rent - float(edit_advance)
+
                             target_b['food_items'] = added_f_items
                             target_b['food'] = new_food_total
                             target_b['activities'] = added_act_items
@@ -818,7 +874,7 @@ with get_tab("🏨 Stay Bookings"):
                 "Unit": b.get('unit', 'N/A'),
                 "Check-In": b.get('checkin', 'N/A'),
                 "Check-Out": b.get('checkout', 'N/A'),
-                "Status": b.get('status', 'N/A'),
+                "Status": b.get('status', 'N/N'),
                 "Type": b.get('staytype', 'Paid Regular'),
                 "Grand Total (PKR)": f"Rs. {grand:,}"
             })
@@ -873,8 +929,6 @@ with get_tab("🏨 Stay Bookings"):
                                     pass
                             st.success("Booking restored successfully!")
                             st.rerun()
-            else:
-                st.info("Recycle bin is empty.")
     else:
         st.info("No active bookings found.")
 
@@ -1241,7 +1295,7 @@ with get_tab("🧹 Housekeeping"):
                 save_data()
                 st.rerun()
 
-# 5. INVOICE GENERATOR & EDITABLE WORD EXPORT TAB
+# 5. # INVOICE GENERATOR & EDITABLE WORD EXPORT TAB
 with get_tab("🧾 Invoice Generator"):
     st.markdown("<h3 style='color: #f97316;'>🧾 Executive Invoice Generator & Detailed Word Export</h3>", unsafe_allow_html=True)
     
@@ -1326,6 +1380,11 @@ with get_tab("🧾 Invoice Generator"):
                                 paid_items_list.append({"name": f"Service: {a_name}", "price": a_price})
                                 total_payable += a_price
 
+                # ایڈوانس رقم اور پیمنٹ کا طریقہ حاصل کرنا
+                advance_paid = int(inv_data.get('advance_amount', 0)) if not is_visitor else 0
+                payment_mode = inv_data.get('payment_method', 'N/A') if not is_visitor else 'N/A'
+                net_due_payable = max(0, total_payable - advance_paid)
+
                 inv_html = f"""
                 <div class='invoice-box'>
                     <h2 style='text-align: center; color: #f97316; margin-bottom: 5px;'>HOLIDAY COUNTRY CLUB</h2>
@@ -1364,9 +1423,12 @@ with get_tab("🧾 Invoice Generator"):
                 else:
                     inv_html += "<p style='color: #94a3b8; font-style: italic;'>No complimentary waivers applied.</p>"
 
+                # انوائس ویو میں ایڈوانس کٹوتّی، پیمنٹ موڈ اور نیٹ پے ایبل کی تفصیل
                 inv_html += f"""
                     <hr style='border: 1px solid #475569;'>
-                    <h3 style='text-align: right; color: #16a34a;'>Net Payable Grand Total: Rs. {total_payable:,}</h3>
+                    <p style='text-align: right; font-size: 14px;'><b>Gross Total:</b> Rs. {total_payable:,}</p>
+                    <p style='text-align: right; font-size: 14px; color: #0284c7;'><b>Less: Advance Paid ({payment_mode}):</b> - Rs. {advance_paid:,}</p>
+                    <h3 style='text-align: right; color: #16a34a;'>Net Payable Grand Total: Rs. {net_due_payable:,}</h3>
                     <p style='text-align: center; font-size: 11px; color: #94a3b8; margin-top: 30px;'>Thank you for choosing Holiday Country Club, Murree.</p>
                 </div>
                 """
@@ -1400,8 +1462,11 @@ COMPLIMENTARY ADJUSTMENTS (COMPANY COMPENSATED):
                 else:
                     word_content += "No complimentary items.\n"
 
+                # ورڈ فائل کے اندر بھی ایڈوانس اور پیمنٹ موڈ کی باقاعدہ کیلکولیشن کا اندراج
                 word_content += f"""--------------------------------------------------
-NET PAYABLE GRAND TOTAL: Rs. {total_payable:,}
+Gross Total: Rs. {total_payable:,}
+Advance Paid via {payment_mode}: - Rs. {advance_paid:,}
+NET PAYABLE GRAND TOTAL: Rs. {net_due_payable:,}
 ==================================================
 Generated via Holiday Country Club Executive Portal.
 Architected & Developed by M. Arif Aziz.

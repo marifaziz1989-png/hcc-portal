@@ -790,13 +790,14 @@ with get_tab("🏨 Stay Bookings"):
                 if not filtered_menu:
                     st.warning("⚠️ No matching menu items found for your search.")
                 
-                # Render filtered menu items
+                # Render filtered menu items with unique keys to avoid StreamlitDuplicateElementKey error
                 for i, m in enumerate(filtered_menu):
                     cols_m = st.columns([3, 2])
                     cols_m[0].markdown(f"**{m['item']}** (Rs. {m['price']})")
                     
-                    # Unique key based on item name to preserve state even when filtered
-                    safe_item_key = m['item'].replace(" ", "_").lower()
+                    # Combining index 'i' and item name to guarantee 100% unique key
+                    safe_item_key = f"{i}_{m['item'].strip().replace(' ', '_').lower()}"
+                    
                     m_choice = cols_m[1].radio(
                         "Type", 
                         ["Unselected", "Paid", "Complimentary"], 

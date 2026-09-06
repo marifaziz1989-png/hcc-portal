@@ -195,7 +195,7 @@ def load_data():
         {"item": "Mineral Water 1.5 L", "price": 160},
         {"item": "Special Tea", "price": 200},
         {"item": "Tea", "price": 169},
-        {"item": "Green Tea", "price": 150},
+        {"item": "Green Tea", "price": 100},
         {"item": "Black Tea", "price": 100},
         {"item": "Ginger Tea", "price": 189},
         {"item": "Cardamom Tea", "price": 189}

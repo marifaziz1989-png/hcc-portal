@@ -160,8 +160,8 @@ def load_data():
         {"name": "Airport/City Transfer", "price": 4000},
         {"name": "Jacuzzi Access", "price": 3000},
         {"name": "BBQ Arrangement", "price": 4000},
-        {"name": "Guided Resort Tour", "price": 2000}
-        {"name": "Extra Mattress ", "price": 2000}
+        {"name": "Guided Resort Tour", "price": 2000},
+        {"name": "Extra Mattress ", "price": 2000},
     ]
 
     default_menu = [

@@ -120,7 +120,7 @@ st.markdown("""
         .invoice-box { background: white !important; color: black !important; border: 1px solid black !important; box-shadow: none !important; width: 100% !important; margin: 0 !important; }
     }
 </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 def render_metric(title, value, bg_color):
     st.markdown(f"""
@@ -133,6 +133,7 @@ def render_metric(title, value, bg_color):
 # --- SAFE DATABASE HANDLING ---
 DATA_FILE = "hcc_database.json"
 
+
 def load_data():
     default_units = [
         "FP01 - HCC 2 Bed Forest Villa",
@@ -144,6 +145,7 @@ def load_data():
         "W04 - A-Frame Studio Woody Cottage",
         "TH-01 - HCC Signature Tree House"
     ]
+
     default_services = [
         {"name": "Swimming Pool", "price": 2000},
         {"name": "Jacuzzi", "price": 3000},
@@ -156,57 +158,95 @@ def load_data():
         {"name": "BBQ Arrangement", "price": 4000},
         {"name": "Guided Resort Tour", "price": 2000}
     ]
+
     default_menu = [
+        {"item": "Double French Omelette", "price": 299},
+        {"item": "Fried Egg - Single", "price": 79},
+        {"item": "Fried Egg - Double", "price": 159},
+        {"item": "Breakfast Platter", "price": 800},
+        {"item": "Fritters - Large Plate", "price": 599},
         {"item": "Chicken Karahi (1 KG)", "price": 2500},
         {"item": "Mutton Karahi (1 KG)", "price": 4500},
-        {"item": "Water Bottle (1.5L)", "price": 150},
-        {"item": "Special Tea", "price": 200},
-        {"item": "Green Tea", "price": 150},
+        {"item": "Classic - Half Kg", "price": 1799},
+        {"item": "Classic - Full Kg", "price": 2999},
+        {"item": "White Karahi - Half Kg", "price": 1899},
+        {"item": "White Karahi - Full Kg", "price": 3199},
+        {"item": "Makhni Karahi - Half Kg", "price": 1999},
+        {"item": "Makhni Karahi - Full Kg", "price": 3349},
+        {"item": "Mix Daal - For 2 Persons", "price": 499},
+        {"item": "Daal Mash - For 2 Persons", "price": 499},
+        {"item": "Chana Plate", "price": 449},
+        {"item": "Chicken Biryani - Plate L", "price": 849},
+        {"item": "Chicken Pulao - Plate L", "price": 729},
+        {"item": "Zera Pulao - Plate L", "price": 649},
+        {"item": "Raita - Bowl", "price": 250},
+        {"item": "Salad", "price": 199},
         {"item": "BBQ Platter", "price": 3000},
-        {"item": "Breakfast Platter", "price": 800}
+        {"item": "Chicken Tikka Boti (5 Pcs/Seekh)", "price": 699},
+        {"item": "Chicken Malai Boti (5 Pcs/Seekh - Min 4)", "price": 899},
+        {"item": "BBQ Pit Service Charges (2 Hours)", "price": 2000},
+        {"item": "Halwa - For 2 Persons", "price": 699},
+        {"item": "Roti (Per Pc)", "price": 30},
+        {"item": "Paratha (Per Pc)", "price": 100},
+        {"item": "Water Bottle (1.5L)", "price": 150},
+        {"item": "Cold Drink 0.5 L", "price": 140},
+        {"item": "Cold Drink 1.5 L", "price": 230},
+        {"item": "Mineral Water 0.5 L", "price": 90},
+        {"item": "Mineral Water 1.5 L", "price": 160},
+        {"item": "Special Tea", "price": 200},
+        {"item": "Tea", "price": 169},
+        {"item": "Green Tea", "price": 150},
+        {"item": "Black Tea", "price": 100},
+        {"item": "Ginger Tea", "price": 189},
+        {"item": "Cardamom Tea", "price": 189}
     ]
-    
+
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, "r") as f:
                 data = json.load(f)
-                del_b = data.get("deleted_bookings", [])
-                safe_del_b = [item for item in del_b if isinstance(item, dict) and "record" in item]
-                del_v = data.get("deleted_visitors", [])
-                safe_del_v = [item for item in del_v if isinstance(item, dict) and "record" in item]
-                
-                del_units = data.get("deleted_units", [])
-                del_menu = data.get("deleted_menu", [])
-                del_services = data.get("deleted_services", [])
-
                 return (
-                    data.get("units", default_units), 
-                    data.get("bookings", []), 
-                    data.get("visitors", []), 
+                    data.get("units", default_units),
+                    data.get("bookings", []),
+                    data.get("visitors", []),
                     data.get("services_catalog", default_services),
                     data.get("restaurant_menu", default_menu),
                     data.get("expenses", []),
-                    data.get("housekeeping", {u: "Clean" for u in data.get("units", default_units)}),
-                    safe_del_b,
-                    safe_del_v,
-                    del_units,
-                    del_menu,
-                    del_services
+                    data.get("housekeeping", {u: "Clean" for u in default_units}),
+                    data.get("deleted_bookings", []),
+                    data.get("deleted_visitors", []),
+                    data.get("deleted_units", []),
+                    data.get("deleted_menu", []),
+                    data.get("deleted_services", [])
                 )
         except Exception:
             pass
-            
-    return default_units, [], [], default_services, default_menu, [], {u: "Clean" for u in default_units}, [], [], [], [], []
+
+    return (
+        default_units,
+        [],
+        [],
+        default_services,
+        default_menu,
+        [],
+        {u: "Clean" for u in default_units},
+        [],
+        [],
+        [],
+        [],
+        []
+    )
+
 
 def save_data():
     data = {
-        "units": st.session_state.units, 
-        "bookings": st.session_state.bookings, 
-        "visitors": st.session_state.visitors, 
-        "services_catalog": st.session_state.services_catalog, 
+        "units": st.session_state.units,
+        "bookings": st.session_state.bookings,
+        "visitors": st.session_state.visitors,
+        "services_catalog": st.session_state.services_catalog,
         "restaurant_menu": st.session_state.restaurant_menu,
-        "expenses": st.session_state.expenses, 
-        "housekeeping": st.session_state.housekeeping, 
+        "expenses": st.session_state.expenses,
+        "housekeeping": st.session_state.housekeeping,
         "deleted_bookings": st.session_state.deleted_bookings,
         "deleted_visitors": st.session_state.deleted_visitors,
         "deleted_units": st.session_state.deleted_units,
@@ -337,7 +377,7 @@ st.markdown(f"""
 <div style="display: flex; align-items: center; gap: 12px;">
 {logo_html}
 <div style="text-align: left;">
-<h1 style="color: white; margin: 0; font-size: 40px; font-weight: 1300; letter-spacing: 0.5px; line-height: 1.1;">WELCOME</h1>
+<h1 style="color: white; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; line-height: 1.1;">Holiday Country Club</h1>
 <p style="color: #f97316; margin: 2px 0 0 0; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">Executive Portal</p>
 </div>
 </div>
@@ -378,7 +418,7 @@ st.markdown(f"""
 </div>
 </div>
 <div style="margin-top: 8px; border-top: 1px solid rgba(249, 115, 22, 0.2); padding-top: 6px;">
-<marquee behavior="scroll" direction="left" scrollamount="4" style="color: #fff; font-size: 11px; font-weight: 600; letter-spacing: 0.5px;">
+<marquee behavior="scroll" direction="left" scrollamount="4" style="color: #f97316; font-size: 11px; font-weight: 600; letter-spacing: 0.5px;">
 🌟 Welcome to Holiday Country Club (HCC) Executive Portal — Managing Excellence in Murree Hills | Real-Time Operations & Financial Tracking 🌟
 </marquee>
 </div>
@@ -726,11 +766,45 @@ with get_tab("🏨 Stay Bookings"):
 
                 st.markdown("---")
                 st.markdown("<h4 style='color: #f97316;'>🍲 Restaurant Menu Order</h4>", unsafe_allow_html=True)
+                
+                # --- Instant Live Search Bar ---
+                if "visitor_menu_search_bar_main" not in st.session_state:
+                    st.session_state["visitor_menu_search_bar_main"] = ""
+                    
+                menu_search_query = st.text_input(
+                    "🔍 Quick Search Menu Item", 
+                    placeholder="Type to filter item instantly (e.g., Paratha, Tea)...", 
+                    key="visitor_menu_search_bar_main"
+                )
+                
                 menu_items_ordered, menu_total = [], 0
-                for i, m in enumerate(st.session_state.restaurant_menu):
+                current_menu = st.session_state.get("restaurant_menu", [])
+                
+                # Filter menu items dynamically based on search query
+                filtered_menu = []
+                for m in current_menu:
+                    item_name = m.get("item", "")
+                    if not menu_search_query or menu_search_query.strip().lower() in item_name.lower():
+                        filtered_menu.append(m)
+                
+                if not filtered_menu:
+                    st.warning("⚠️ No matching menu items found for your search.")
+                
+                # Render filtered menu items
+                for i, m in enumerate(filtered_menu):
                     cols_m = st.columns([3, 2])
                     cols_m[0].markdown(f"**{m['item']}** (Rs. {m['price']})")
-                    m_choice = cols_m[1].radio("Type", ["Unselected", "Paid", "Complimentary"], key=f"stay_menu_choice_{i}", horizontal=True, label_visibility="collapsed")
+                    
+                    # Unique key based on item name to preserve state even when filtered
+                    safe_item_key = m['item'].replace(" ", "_").lower()
+                    m_choice = cols_m[1].radio(
+                        "Type", 
+                        ["Unselected", "Paid", "Complimentary"], 
+                        key=f"stay_menu_choice_live_{safe_item_key}", 
+                        horizontal=True, 
+                        label_visibility="collapsed"
+                    )
+                    
                     if m_choice != "Unselected":
                         is_comp = (m_choice == "Complimentary")
                         menu_items_ordered.append({'name': m['item'], 'price': m['price'], 'comp': is_comp})
